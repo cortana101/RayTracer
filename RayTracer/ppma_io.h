@@ -11,8 +11,6 @@
 
 #include <iostream>
 
-#endif /* defined(__RayTracer__ppma_io__) */
-
 using namespace std;
 
 char ch_cap ( char ch );
@@ -40,3 +38,6 @@ bool ppma_write_test ( string file_out_name );
 bool s_eqi ( string s1, string s2 );
 int s_len_trim ( string s );
 void s_word_extract_first ( string s, string &s1, string &s2 );
+
+#endif /* defined(__RayTracer__ppma_io__) */
+

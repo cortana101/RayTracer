@@ -12,8 +12,6 @@
 #include <iostream>
 #include "ppma_io.h"
 
-#endif /* defined(__RayTracer__OutputRasterizer__) */
-
 using namespace std;
 
 struct Point
@@ -35,3 +33,6 @@ private:
     int ySize;
     Point* buffer;
 };
+
+#endif /* defined(__RayTracer__OutputRasterizer__) */
+

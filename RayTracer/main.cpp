@@ -9,8 +9,13 @@
 #include <iostream>
 #include "ppma_io.h"
 #include "OutputRasterizer.h"
+#include "Vector3D.h"
+#include "ProjectionUtils.h"
+#include "Triangle.h"
+#include "Tracer.h"
 
-#define XSIZE 500
+// Standard 4:3 format
+#define XSIZE 800
 #define YSIZE 600
 
 using namespace std;
@@ -19,8 +24,17 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    writeSample()->WriteToFile("out.ppm");
+//    writeSample()->WriteToFile("out.ppm");
 
+    Triangle* model = new Triangle();
+    model->p1 = new Vector3D(0.0, 1.0, 3.0);
+    model->p2 = new Vector3D(1.0, 0.0, 3.0);
+    model->p3 = new Vector3D(-1.0, 0.0, 2.0);
+    
+    Tracer* tracer = new Tracer();
+
+    tracer->Render(model, 1, 90, XSIZE, YSIZE)->WriteToFile("out.ppm");
+    
     // insert code here...
     cout << "Wrote to file\n";
     
