@@ -18,10 +18,12 @@ namespace projectionUtils
     /// to each pixel when we get the viewport of the provided viewing angle and
     /// lay out the pixels at that angle
     /// \param viewAngleX The viewing angle in degrees
-    /// \param x The number of pixels in the X plane
-    /// \param y The number of pixels in the Y plane
-    /// \returns A list of vectors of length X*Y that contains all the vectors to all of the given pixels
-    Vector3D** GetProjection(int viewingAngleX, int x, int y);
+    /// \param xSpan The number of pixels in the X plane
+    /// \param ySpan The number of pixels in the Y plane
+    /// \param xCoord The x coordinate of the pixel we want to get a ray for
+    /// \param yCoord The y coordinate of the pixel we want to get a ray for
+    /// \returns A vector corresponding to the ray going from the origin through the provided coordinates
+    Vector3D* GetProjection(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord);
 };
 
 #endif /* defined(__RayTracer__ProjectionUtils__) */

@@ -22,29 +22,61 @@ Tracer::~Tracer()
 
 OutputRasterizer* Tracer::Render(Triangle *model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
 {
-    Vector3D** projectedRays = projectionUtils::GetProjection(90, xSpan, ySpan);
-    
-    Vector3D* reflectedRay;
-    
     OutputRasterizer* output = new OutputRasterizer(xSpan, ySpan);
 
     for(int i = 0; i < xSpan; i++)
     {
         for(int j = 0; j < ySpan; j++)
         {
-            Vector3D* intersect = this->ProcessSingleRay(*model, projectedRays[i + j * xSpan], &reflectedRay);
+            Vector3D* ray = projectionUtils::GetProjection(90, xSpan, ySpan, i, j);
+ 
+            Vector3D* reflectedRay;
+            Vector3D* closestReflectedRay;
+            Vector3D* intersect = NULL;
+            Vector3D* closestIntersect = NULL;
+            int modelIterator = 0;
             
-            if(intersect != nullptr)
+            while (modelIterator < modelLength)
             {
-                Vector3D* intersectToLight = PointToPoint(intersect, lightSources[0].position);
-                double angleToLight = GetAngle(intersectToLight, reflectedRay);
+                intersect = this->ProcessSingleRay(model[modelIterator], ray, &reflectedRay);
+                
+                if (intersect != NULL)
+                {
+                    if (closestIntersect != NULL)
+                    {
+                        if (GetMagnitude(intersect) < GetMagnitude(closestIntersect))
+                        {
+                            closestIntersect = intersect;
+                            closestReflectedRay = reflectedRay;
+                        }
+                    }
+                    else
+                    {
+                        closestIntersect = intersect;
+                        closestReflectedRay = reflectedRay;
+                    }
+                }
+                
+                modelIterator++;
+            }
+            
+            delete ray;
+            
+            if(closestIntersect != nullptr)
+            {
+                Vector3D* intersectToLight = PointToPoint(closestIntersect, lightSources[0].position);
+                double angleToLight = GetAngle(intersectToLight, closestReflectedRay);
                 
                 output->SetOutput(i, j, 255 - angleToLight * 150, 0, 0);
+                delete intersectToLight;
+                delete reflectedRay;
             }
             else
             {
                 output->SetOutput(i, j, 0, 0, 0);
             }
+            
+            delete intersect;
         }
     }
 
@@ -65,8 +97,10 @@ Vector3D* Tracer::ProcessSingleRay(Triangle triangle, Vector3D* ray, Vector3D** 
     normalY = oneToTwo->getZ() * oneToThree->getX() - oneToTwo->getX() * oneToThree->getZ();
     normalZ = oneToTwo->getX() * oneToThree->getY() - oneToTwo->getY() * oneToThree->getX();
     
-    delete oneToTwo;
-    delete oneToThree;
+    free(oneToTwo);
+    free(oneToThree);
+    //delete oneToTwo;
+    //delete oneToThree;
     
     Vector3D* normal = new Vector3D(normalX, normalY, normalZ);
     ToUnitVector(&normal);

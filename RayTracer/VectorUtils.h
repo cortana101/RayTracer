@@ -31,6 +31,9 @@ namespace VectorUtils
     /// Gets a unit vector in the direction of the reflected ray given
     /// the incident ray and the normal
     Vector3D* GetReflection(Vector3D* incidentRay, Vector3D* normal);
+    
+    /// Creates a copy of the vector in memory
+    Vector3D* Clone(Vector3D* v);
 }
 
 #endif

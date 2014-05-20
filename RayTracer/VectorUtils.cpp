@@ -38,8 +38,6 @@ namespace VectorUtils
         double yComponent = (*v)->getY() / magnitude;
         double zComponent = (*v)->getZ() / magnitude;
         
-        delete *v;
-        
         *v = new Vector3D(xComponent, yComponent, zComponent);
     }
     
@@ -50,5 +48,10 @@ namespace VectorUtils
         double zComponent = incidentRay->getZ() - 2 * incidentRay->getZ() * pow(normal->getZ(), 2.0);
         
         return new Vector3D(xComponent, yComponent, zComponent);
+    }
+    
+    Vector3D* Clone(Vector3D* v)
+    {
+        return new Vector3D(v->getX(), v->getY(), v->getZ());
     }
 }
