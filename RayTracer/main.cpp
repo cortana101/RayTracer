@@ -13,6 +13,7 @@
 #include "ProjectionUtils.h"
 #include "Triangle.h"
 #include "Tracer.h"
+#include "LightSource.h"
 
 // Standard 4:3 format
 #define XSIZE 800
@@ -27,13 +28,17 @@ int main(int argc, const char * argv[])
 //    writeSample()->WriteToFile("out.ppm");
 
     Triangle* model = new Triangle();
-    model->p1 = new Vector3D(0.0, 1.0, 3.0);
-    model->p2 = new Vector3D(1.0, 0.0, 3.0);
-    model->p3 = new Vector3D(-1.0, 0.0, 2.0);
+    model->p1 = new Vector3D(0.0, 2.0, 3.0);
+    model->p2 = new Vector3D(1.5, -1.0, 4.0);
+    model->p3 = new Vector3D(-2.0, -1.0, 2.0);
+    
+    // Make a light source directly overhead
+    LightSource* light = new LightSource();
+    light->position = new Vector3D(0.0, 1.0, 0.0);
     
     Tracer* tracer = new Tracer();
 
-    tracer->Render(model, 1, 90, XSIZE, YSIZE)->WriteToFile("out.ppm");
+    tracer->Render(model, 1, light, 1, 90, XSIZE, YSIZE)->WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";
