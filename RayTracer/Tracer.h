@@ -16,7 +16,6 @@
 #include "OutputRasterizer.h"
 #include "ProjectionUtils.h"
 #include "LightSource.h"
-#include "VectorUtils.h"
 
 class Tracer
 {
@@ -24,11 +23,12 @@ public:
     Tracer();
     ~Tracer();
     /// Performs the actual render of the output buffer
-    OutputRasterizer* Render(Triangle* model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan);
+    OutputRasterizer Render(Triangle* model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan);
 private:
     /// Determines if there is a hit between the ray and the triangle
-    ///\Returns the exact hit point if it exists, otherwise returns null
-    Vector3D* ProcessSingleRay(Triangle triangle, Vector3D* ray, Vector3D** outReflection);
+    ///\Returns true if we have a hit, false otherwise,
+    /// If we hit, we will store the intersection point and the reflection vectors in the 2 provided pointers
+    bool ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D* intersectPoint, Vector3D* outReflection);
 };
 
 #endif /* defined(__RayTracer__Tracer__) */

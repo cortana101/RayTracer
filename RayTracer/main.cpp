@@ -26,20 +26,20 @@ OutputRasterizer* writeSample();
 int main(int argc, const char * argv[])
 {
     Triangle model[2];
-    model[0].p1 = new Vector3D(0.0, 2.0, 3.0);
-    model[0].p2 = new Vector3D(1.5, -1.0, 4.0);
-    model[0].p3 = new Vector3D(-2.0, -1.0, 2.0);
-    model[1].p1 = new Vector3D(1.0, 1.0, 2.0);
-    model[1].p2 = new Vector3D(2.0, -0.5, 2.0);
-    model[1].p3 = new Vector3D(0.0, -0.5, 2.0);
+    model[0].p1 = Vector3D(0.0, 2.0, 3.0);
+    model[0].p2 = Vector3D(1.5, -1.0, 4.0);
+    model[0].p3 = Vector3D(-2.0, -1.0, 2.0);
+    model[1].p1 = Vector3D(1.0, 1.0, 3.0);
+    model[1].p2 = Vector3D(2.0, -0.5, 2.0);
+    model[1].p3 = Vector3D(0.5, -0.5, 4.0);
     
     // Make a light source directly overhead
     LightSource* light = new LightSource();
     light->position = new Vector3D(0.0, 1.0, 0.0);
     
-    Tracer* tracer = new Tracer();
+    Tracer tracer;
 
-    tracer->Render(model, 2, light, 1, 90, XSIZE, YSIZE)->WriteToFile("out.ppm");
+    tracer.Render(model, 2, light, 1, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";

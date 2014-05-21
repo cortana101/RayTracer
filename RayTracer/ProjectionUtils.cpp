@@ -13,7 +13,7 @@ namespace projectionUtils
 {
     static double ConvertDegreesToRadians(double degrees);
     
-    Vector3D* GetProjection(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord)
+    Vector3D GetProjection(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord)
     {
         // Set an arbitrary Z value on our vector, it doesnt really matter what this is
         // as long as its some positive number
@@ -23,7 +23,7 @@ namespace projectionUtils
         
         Vector3D topLeftCorner(-xSpanLength / 2, ySpanLength / 2, z);
         
-        return new Vector3D(-xSpanLength / 2 + xCoord * (xSpanLength / xSpan), ySpanLength / 2 - yCoord * (ySpanLength / ySpan), z);
+        return Vector3D(-xSpanLength / 2 + xCoord * (xSpanLength / xSpan), ySpanLength / 2 - yCoord * (ySpanLength / ySpan), z);
     }
     
     static double ConvertDegreesToRadians(double degrees)

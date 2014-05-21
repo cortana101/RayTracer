@@ -15,9 +15,9 @@
 /// Represents a triangle in 3d space
 struct Triangle
 {
-    Vector3D *p1;
-    Vector3D *p2;
-    Vector3D *p3;
+    Vector3D p1;
+    Vector3D p2;
+    Vector3D p3;
 };
 
 

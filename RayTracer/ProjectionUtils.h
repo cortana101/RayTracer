@@ -23,7 +23,7 @@ namespace projectionUtils
     /// \param xCoord The x coordinate of the pixel we want to get a ray for
     /// \param yCoord The y coordinate of the pixel we want to get a ray for
     /// \returns A vector corresponding to the ray going from the origin through the provided coordinates
-    Vector3D* GetProjection(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord);
+    Vector3D GetProjection(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord);
 };
 
 #endif /* defined(__RayTracer__ProjectionUtils__) */

@@ -8,8 +8,6 @@
 
 #include "Tracer.h"
 
-using namespace VectorUtils;
-
 Tracer::Tracer()
 {
     // Do nothing
@@ -20,31 +18,30 @@ Tracer::~Tracer()
     // Do nothing
 }
 
-OutputRasterizer* Tracer::Render(Triangle *model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
+OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
 {
-    OutputRasterizer* output = new OutputRasterizer(xSpan, ySpan);
+    OutputRasterizer output (xSpan, ySpan);
 
     for(int i = 0; i < xSpan; i++)
     {
         for(int j = 0; j < ySpan; j++)
         {
-            Vector3D* ray = projectionUtils::GetProjection(90, xSpan, ySpan, i, j);
+            Vector3D ray = projectionUtils::GetProjection(90, xSpan, ySpan, i, j);
  
-            Vector3D* reflectedRay;
-            Vector3D* closestReflectedRay;
-            Vector3D* intersect = NULL;
-            Vector3D* closestIntersect = NULL;
+            Vector3D reflectedRay;
+            Vector3D closestReflectedRay;
+            Vector3D intersect;
+            Vector3D closestIntersect;
+            bool hasIntersect = false;
             int modelIterator = 0;
             
             while (modelIterator < modelLength)
             {
-                intersect = this->ProcessSingleRay(model[modelIterator], ray, &reflectedRay);
-                
-                if (intersect != NULL)
+                if (this->ProcessSingleRay(model[modelIterator], ray, &intersect, &reflectedRay))
                 {
-                    if (closestIntersect != NULL)
+                    if (hasIntersect)
                     {
-                        if (GetMagnitude(intersect) < GetMagnitude(closestIntersect))
+                        if (intersect.GetMagnitude() < closestIntersect.GetMagnitude())
                         {
                             closestIntersect = intersect;
                             closestReflectedRay = reflectedRay;
@@ -52,6 +49,7 @@ OutputRasterizer* Tracer::Render(Triangle *model, int modelLength, LightSource* 
                     }
                     else
                     {
+                        hasIntersect = true;
                         closestIntersect = intersect;
                         closestReflectedRay = reflectedRay;
                     }
@@ -59,98 +57,77 @@ OutputRasterizer* Tracer::Render(Triangle *model, int modelLength, LightSource* 
                 
                 modelIterator++;
             }
-            
-            delete ray;
-            
-            if(closestIntersect != nullptr)
+           
+            if(hasIntersect)
             {
-                Vector3D* intersectToLight = PointToPoint(closestIntersect, lightSources[0].position);
-                double angleToLight = GetAngle(intersectToLight, closestReflectedRay);
+                Vector3D intersectToLight = closestIntersect.PointToPoint(*lightSources[0].position);
+                double angleToLight = intersectToLight.GetAngle(closestReflectedRay);
                 
-                output->SetOutput(i, j, 255 - angleToLight * 150, 0, 0);
-                delete intersectToLight;
-                delete reflectedRay;
+                output.SetOutput(i, j, 255 - angleToLight * 150, 0, 0);
             }
             else
             {
-                output->SetOutput(i, j, 0, 0, 0);
+                output.SetOutput(i, j, 0, 0, 0);
             }
-            
-            delete intersect;
         }
     }
 
     return output;
 }
 
-Vector3D* Tracer::ProcessSingleRay(Triangle triangle, Vector3D* ray, Vector3D** outReflection)
+bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D* intersectPoint, Vector3D* outReflection)
 {
-    ToUnitVector(&ray);
+    ray.ToUnitVector();
     
     // Get the normal of the triangle
-    double normalX, normalY, normalZ;
-    Vector3D* oneToTwo = PointToPoint(triangle.p1, triangle.p2);
-    Vector3D* oneToThree = PointToPoint(triangle.p1, triangle.p3);
+    Vector3D oneToTwo = triangle.p1.PointToPoint(triangle.p2);
+    Vector3D oneToThree = triangle.p1.PointToPoint(triangle.p3);
     
     // Compute the cross product to get the normal
-    normalX = oneToTwo->getY() * oneToThree->getZ() - oneToTwo->getZ() * oneToThree->getY();
-    normalY = oneToTwo->getZ() * oneToThree->getX() - oneToTwo->getX() * oneToThree->getZ();
-    normalZ = oneToTwo->getX() * oneToThree->getY() - oneToTwo->getY() * oneToThree->getX();
-    
-    free(oneToTwo);
-    free(oneToThree);
-    //delete oneToTwo;
-    //delete oneToThree;
-    
-    Vector3D* normal = new Vector3D(normalX, normalY, normalZ);
-    ToUnitVector(&normal);
+    Vector3D normal = oneToTwo.CrossProduct(oneToThree);
+    normal.ToUnitVector();
     
     // if Normal . RayDirection = 0, it is parallel so will never hit
     
-    double D = DotProduct(normal, ray);
+    double D = normal.DotProduct(ray);
     
     if (D == 0.0)
     {
-        delete normal;
-        return nullptr;
+        return false;
     }
     
     // Get the distance from the plane to the origin
-    double d = -DotProduct(triangle.p1, normal);
+    double d = -triangle.p1.DotProduct(normal);
     double t = -d / D;
     
     if (t < 0.0)
     {
-        return nullptr;
+        return false;
     }
     else
     {
+        // Scale the ray by t to get the exact point of intersection
+        *intersectPoint = ray;
+        intersectPoint->Scale(t);
+        
         // Get angle between all 3 and see if they sum to 360
-        Vector3D* intersectionPoint = new Vector3D(ray->getX() * t, ray->getY() * t, ray->getZ() * t);
-        Vector3D* iToOne = PointToPoint(intersectionPoint, triangle.p1);
-        Vector3D* iToTwo = PointToPoint(intersectionPoint, triangle.p2);
-        Vector3D* iToThree = PointToPoint(intersectionPoint, triangle.p3);
+        Vector3D iToOne = intersectPoint->PointToPoint(triangle.p1);
+        Vector3D iToTwo = intersectPoint->PointToPoint(triangle.p2);
+        Vector3D iToThree = intersectPoint->PointToPoint(triangle.p3);
         
-        double sumOfAngles = GetAngle(iToOne, iToTwo) + GetAngle(iToTwo, iToThree) + GetAngle(iToThree, iToOne);
-        
-        delete iToOne;
-        delete iToTwo;
-        delete iToThree;
+        double sumOfAngles = iToOne.GetAngle(iToTwo) + iToTwo.GetAngle(iToThree) + iToThree.GetAngle(iToOne);
         
         // Add a little relief angle to handle rounding errors
         if (sumOfAngles >= (2 * M_PI - 0.001))
         {
-            *outReflection = GetReflection(intersectionPoint, normal);
-            ToUnitVector(outReflection);
-            
-            delete normal;
-            
-            return intersectionPoint;
+            *outReflection = intersectPoint->GetReflection(normal);
+            outReflection->ToUnitVector();
+           
+            return true;
         }
         else
         {
-            delete normal;
-            return nullptr;
+            return false;
         }
     }
 }
