@@ -7,6 +7,7 @@
 //
 
 #include <iostream>
+#include "Colour.h"
 #include "ppma_io.h"
 #include "OutputRasterizer.h"
 #include "Vector3D.h"
@@ -25,13 +26,22 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    Triangle model[2];
+    Triangle model[3];
     model[0].p1 = Vector3D(0.0, 2.0, 3.0);
     model[0].p2 = Vector3D(1.5, -1.0, 4.0);
     model[0].p3 = Vector3D(-2.0, -1.0, 2.0);
+    model[0].gloss = 0.5;
+    model[0].colour = Colour(120, 1, 1);
     model[1].p1 = Vector3D(1.0, 1.0, 3.0);
     model[1].p2 = Vector3D(2.0, -0.5, 2.0);
     model[1].p3 = Vector3D(0.5, -0.5, 4.0);
+    model[1].gloss = 0.8;
+    model[1].colour = Colour(1, 50, 255);
+    model[2].p1 = Vector3D(1.0, 1.0, 3.0);
+    model[2].p2 = Vector3D(2.0, -0.5, 2.0);
+    model[2].p3 = Vector3D(3.0, 2.0, 3.0);
+    model[2].gloss = 0.6;
+    model[2].colour = Colour(1, 50, 255);
     
     // Make a light source directly overhead
     LightSource* light = new LightSource();
@@ -39,7 +49,7 @@ int main(int argc, const char * argv[])
     
     Tracer tracer;
 
-    tracer.Render(model, 2, light, 1, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(model, 3, light, 1, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";

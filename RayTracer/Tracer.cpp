@@ -32,6 +32,7 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
             Vector3D closestReflectedRay;
             Vector3D intersect;
             Vector3D closestIntersect;
+            Triangle intersectedTriangle;
             bool hasIntersect = false;
             int modelIterator = 0;
             
@@ -45,6 +46,7 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
                         {
                             closestIntersect = intersect;
                             closestReflectedRay = reflectedRay;
+                            intersectedTriangle = model[modelIterator];
                         }
                     }
                     else
@@ -52,6 +54,7 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
                         hasIntersect = true;
                         closestIntersect = intersect;
                         closestReflectedRay = reflectedRay;
+                        intersectedTriangle = model[modelIterator];
                     }
                 }
                 
@@ -62,8 +65,11 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
             {
                 Vector3D intersectToLight = closestIntersect.PointToPoint(*lightSources[0].position);
                 double angleToLight = intersectToLight.GetAngle(closestReflectedRay);
+                double glossFactor = 1.0 / pow(angleToLight, intersectedTriangle.gloss);
+                Colour colour = intersectedTriangle.colour;
+                colour.Scale(glossFactor);
                 
-                output.SetOutput(i, j, 255 - angleToLight * 150, 0, 0);
+                output.SetOutput(i, j, colour.rVal, colour.gVal, colour.bVal);
             }
             else
             {

@@ -11,15 +11,9 @@
 
 #include <iostream>
 #include "ppma_io.h"
+#include "Colour.h"
 
 using namespace std;
-
-struct Point
-{
-    int rVal;
-    int gVal;
-    int bVal;
-};
 
 class OutputRasterizer
 {
@@ -31,7 +25,7 @@ public:
 private:
     int xSize;
     int ySize;
-    Point* buffer;
+    Colour* buffer;
 };
 
 #endif /* defined(__RayTracer__OutputRasterizer__) */

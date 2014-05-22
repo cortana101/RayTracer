@@ -10,7 +10,9 @@
 #define __RayTracer__Triangle__
 
 #include <iostream>
+#include "OutputRasterizer.h"
 #include "Vector3D.h"
+#include "Colour.h"
 
 /// Represents a triangle in 3d space
 struct Triangle
@@ -18,6 +20,12 @@ struct Triangle
     Vector3D p1;
     Vector3D p2;
     Vector3D p3;
+    
+    /// Determines how glossy an object is, 0 = matt, 1 = full gloss
+    float gloss;
+ 
+    /// Determines the natural colour of the object
+    Colour colour;
 };
 
 

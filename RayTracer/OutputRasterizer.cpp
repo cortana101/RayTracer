@@ -12,7 +12,7 @@ OutputRasterizer::OutputRasterizer(int xSize, int ySize)
 {
     this->xSize = xSize;
     this->ySize = ySize;
-    this->buffer = new Point[xSize * ySize];
+    this->buffer = new Colour[xSize * ySize];
 }
 
 OutputRasterizer::~OutputRasterizer()
@@ -39,7 +39,7 @@ void OutputRasterizer::WriteToFile(string filename)
 // Sets a particular point on the output buffer to the specified value
 void OutputRasterizer::SetOutput(int xPos, int yPos, int rVal, int gVal, int bVal)
 {
-    Point* bufferPosition;
+    Colour* bufferPosition;
     bufferPosition = this->buffer + xPos + yPos * xSize;
     
     bufferPosition->rVal = rVal;
