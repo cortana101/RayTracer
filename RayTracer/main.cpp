@@ -26,7 +26,7 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    Triangle model[3];
+    Triangle model[5];
     model[0].p1 = Vector3D(0.0, 2.0, 3.0);
     model[0].p2 = Vector3D(1.5, -1.0, 4.0);
     model[0].p3 = Vector3D(-2.0, -1.0, 2.0);
@@ -42,6 +42,17 @@ int main(int argc, const char * argv[])
     model[2].p3 = Vector3D(3.0, 2.0, 3.0);
     model[2].gloss = 0.6;
     model[2].colour = Colour(1, 50, 255);
+    model[3].p1 = Vector3D(-100.0, -2.0, 0.0);
+    model[3].p2 = Vector3D(100.0, -2.0, 0.0);
+    model[3].p3 = Vector3D(-100.0, -2.0, 100.0);
+    model[3].gloss = 0.3;
+    model[3].colour = Colour(255, 255, 255);
+    model[4].p1 = Vector3D(-100.0, -2.0, 100.0);
+    model[4].p2 = Vector3D(100.0, -2.0, 0.0);
+    model[4].p3 = Vector3D(100.0, -2.0, 100.0);
+    model[4].gloss = 0.1;
+    model[4].colour = Colour(255, 255, 255);
+
     
     // Make a light source directly overhead
     LightSource* light = new LightSource();
@@ -49,7 +60,7 @@ int main(int argc, const char * argv[])
     
     Tracer tracer;
 
-    tracer.Render(model, 3, light, 1, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(model, 4, light, 1, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";

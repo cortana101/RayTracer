@@ -61,6 +61,12 @@ void Vector3D::Scale(double scaleFactor)
     this->z *= scaleFactor;
 }
 
+void Vector3D::Add(Vector3D v2)
+{
+    this->x += v2.x;
+    this->y += v2.y;
+    this->z += v2.z;
+}
 
 Vector3D Vector3D::GetReflection(Vector3D normal)
 {

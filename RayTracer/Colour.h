@@ -35,6 +35,20 @@ struct Colour
         gVal *= scaleFactor;
         bVal *= scaleFactor;
         
+        ApplyLimits();
+    }
+    
+    void Add(Colour c2)
+    {
+        rVal += c2.rVal;
+        gVal += c2.gVal;
+        bVal += c2.bVal;
+        
+        ApplyLimits();
+    }
+    
+    void ApplyLimits()
+    {
         if (rVal < 0)
         {
             rVal = 0;

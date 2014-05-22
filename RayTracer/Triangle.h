@@ -15,8 +15,13 @@
 #include "Colour.h"
 
 /// Represents a triangle in 3d space
-struct Triangle
+class Triangle
 {
+public:
+    Triangle();
+    ~Triangle();
+    void TranslateBy(Vector3D movement);
+    
     Vector3D p1;
     Vector3D p2;
     Vector3D p3;
