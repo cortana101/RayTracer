@@ -14,6 +14,7 @@
 struct LightSource
 {
     Vector3D* position;
+    double intensity;
 };
 
 

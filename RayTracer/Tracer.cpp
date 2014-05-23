@@ -7,6 +7,7 @@
 //
 
 #include "Tracer.h"
+#define REFLECTIVELOSS 0.6
 
 Tracer::Tracer()
 {
@@ -26,9 +27,11 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
     {
         for(int j = 0; j < ySpan; j++)
         {
-            Vector3D ray = projectionUtils::GetProjection(90, xSpan, ySpan, i, j);
+            Vector3D ray = projectionUtils::GetProjection(viewAngleX, xSpan, ySpan, i, j);
+            Vector3D origin = Vector3D(0.0, 0.0, 0.0);
  
-            Colour colour = this->TraceRay(model, modelLength, lightSources, lightSourceLength, ray, 1);
+            // Since the viewport is grounded at the origin, we start tracing with the rays grounded in the origin
+            Colour colour = this->TraceRay(model, modelLength, lightSources, lightSourceLength, ray, origin, 3);
             output.SetOutput(i, j, colour.rVal, colour.gVal, colour.bVal);
         }
     }
@@ -36,59 +39,50 @@ OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* l
     return output;
 }
 
-Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, int reflections)
+Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
 {
-    Vector3D reflectedRay;
     Vector3D closestReflectedRay;
-    Vector3D intersect;
     Vector3D closestIntersect;
     Triangle intersectedTriangle;
-    bool hasIntersect = false;
-    int modelIterator = 0;
+    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, ray, rayOrigin, &closestIntersect, &closestReflectedRay, &intersectedTriangle);
     
-    while (modelIterator < modelLength)
-    {
-        /// Since the ray starts at the viewpoint, it is assumed to be the origin
-        Vector3D rayOrigin = Vector3D(0.0, 0.0, 0.0);
-        
-        if (this->ProcessSingleRay(model[modelIterator], ray, rayOrigin, &intersect, &reflectedRay))
-        {
-            if (hasIntersect)
-            {
-                if (intersect.GetMagnitude() < closestIntersect.GetMagnitude())
-                {
-                    closestIntersect = intersect;
-                    closestReflectedRay = reflectedRay;
-                    intersectedTriangle = model[modelIterator];
-                }
-            }
-            else
-            {
-                hasIntersect = true;
-                closestIntersect = intersect;
-                closestReflectedRay = reflectedRay;
-                intersectedTriangle = model[modelIterator];
-            }
-        }
-        
-        modelIterator++;
-    }
-    
-    Colour output;
+    Colour output = Colour(0, 0, 0);
     
     if(hasIntersect)
     {
-        Vector3D intersectToLight = closestIntersect.PointToPoint(*lightSources[0].position);
-        double angleToLight = intersectToLight.GetAngle(closestReflectedRay);
-        double glossFactor = 1.0 / pow(angleToLight, intersectedTriangle.gloss);
-        output = intersectedTriangle.colour;
-        output.Scale(glossFactor);
+        for (int i = 0; i < lightSourceLength; i++)
+        {
+            Vector3D intersectToLight = closestIntersect.PointToPoint(*lightSources[i].position);
+            
+            // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
+            // light source is blocked or not
+            Vector3D lightIntersectPoint, lightReflection;
+            Triangle lightIntersectTriangle;
+            Colour lightContribution = Colour(0, 0, 0);
+            
+            // Scale by this so we will hit the current triangle
+            Vector3D adjustedIntersect = closestIntersect;
+            adjustedIntersect.Scale(0.999);
+            
+            // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
+            if (!ProcessSingleRayInModel(model, modelLength, intersectToLight, adjustedIntersect, &lightIntersectPoint, &lightReflection, &lightIntersectTriangle))
+            {
+                double angleToLight = intersectToLight.GetAngle(closestReflectedRay);
+                double glossFactor = 1.0 / pow(angleToLight, intersectedTriangle.gloss);
+                lightContribution = intersectedTriangle.colour;
+                lightContribution.Scale(glossFactor);
+                lightContribution.Scale(lightSources[i].intensity);
+            }
+            
+            output.Add(lightContribution);
+        }
         
         reflections--;
         
         if (reflections >= 0)
         {
-            Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, closestReflectedRay, reflections);
+            Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, closestReflectedRay, closestIntersect, reflections);
+            reflectionColour.Scale(REFLECTIVELOSS);
             output.Add(reflectionColour);
         }
     }
@@ -105,13 +99,15 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
     // Move the triangle so that its position relative to the origin is the same as its position relative to the ray's
     // starting point
     rayOrigin.Scale(-1.0);
-    triangle.TranslateBy(rayOrigin);
+    Triangle newTriangle = triangle.TranslateBy(rayOrigin);
+    newTriangle.gloss = triangle.gloss;
+    newTriangle.colour = triangle.colour;
     
     ray.ToUnitVector();
     
     // Get the normal of the triangle
-    Vector3D oneToTwo = triangle.p1.PointToPoint(triangle.p2);
-    Vector3D oneToThree = triangle.p1.PointToPoint(triangle.p3);
+    Vector3D oneToTwo = newTriangle.p1.PointToPoint(newTriangle.p2);
+    Vector3D oneToThree = newTriangle.p1.PointToPoint(newTriangle.p3);
     
     // Compute the cross product to get the normal
     Vector3D normal = oneToTwo.CrossProduct(oneToThree);
@@ -127,10 +123,12 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
     }
     
     // Get the distance from the plane to the origin
-    double d = -triangle.p1.DotProduct(normal);
+    double d = -newTriangle.p1.DotProduct(normal);
     double t = -d / D;
     
-    if (t < 0.0)
+    // Put in a small nominal value to account for rounding errors and ensure we dont hit the surface we are coming off of
+    // The more proper solution here is probably to remove the original triangle from the model
+    if (t <= 0.0001)
     {
         return false;
     }
@@ -141,9 +139,9 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
         outIntersectPoint->Scale(t);
         
         // Get angle between all 3 and see if they sum to 360
-        Vector3D iToOne = outIntersectPoint->PointToPoint(triangle.p1);
-        Vector3D iToTwo = outIntersectPoint->PointToPoint(triangle.p2);
-        Vector3D iToThree = outIntersectPoint->PointToPoint(triangle.p3);
+        Vector3D iToOne = outIntersectPoint->PointToPoint(newTriangle.p1);
+        Vector3D iToTwo = outIntersectPoint->PointToPoint(newTriangle.p2);
+        Vector3D iToThree = outIntersectPoint->PointToPoint(newTriangle.p3);
         
         double sumOfAngles = iToOne.GetAngle(iToTwo) + iToTwo.GetAngle(iToThree) + iToThree.GetAngle(iToOne);
         
@@ -160,4 +158,30 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
             return false;
         }
     }
+}
+
+bool Tracer::ProcessSingleRayInModel(Triangle *model, int modelLength, Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outReflection, Triangle* outIntersectedTriangle)
+{
+    Vector3D reflectedRay;
+    Vector3D intersect;
+    bool hasIntersect = false;
+    int modelIterator = 0;
+    
+    while (modelIterator < modelLength)
+    {
+        if (this->ProcessSingleRay(model[modelIterator], ray, rayOrigin, &intersect, &reflectedRay))
+        {
+            if (!hasIntersect || intersect.GetMagnitude() < outIntersectPoint->GetMagnitude())
+            {
+                hasIntersect = true;
+                *outIntersectPoint = intersect;
+                *outReflection = reflectedRay;
+                *outIntersectedTriangle = model[modelIterator];
+            }
+        }
+        
+        modelIterator++;
+    }
+    
+    return hasIntersect;
 }

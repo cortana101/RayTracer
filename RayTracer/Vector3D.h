@@ -46,7 +46,7 @@ public:
     Vector3D CrossProduct(Vector3D v2);
     
     /// Adds v2 to the current vector to yield the sum of these 2 vectors
-    void Add(Vector3D v2);
+    Vector3D Add(Vector3D v2);
 private:
     double x;
     double y;

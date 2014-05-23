@@ -20,7 +20,7 @@ class Triangle
 public:
     Triangle();
     ~Triangle();
-    void TranslateBy(Vector3D movement);
+    Triangle TranslateBy(Vector3D movement);
     
     Vector3D p1;
     Vector3D p2;

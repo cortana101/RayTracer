@@ -18,9 +18,12 @@ Triangle::~Triangle()
     // do nothing
 }
 
-void Triangle::TranslateBy(Vector3D movement)
+Triangle Triangle::TranslateBy(Vector3D movement)
 {
-    this->p1.Add(movement);
-    this->p2.Add(movement);
-    this->p3.Add(movement);
+    Triangle output;
+    output.p1 = this->p1.Add(movement);
+    output.p2 = this->p2.Add(movement);
+    output.p3 = this->p3.Add(movement);
+    
+    return output;
 }
