@@ -58,14 +58,14 @@ int main(int argc, const char * argv[])
     LightSource light[3];
     light[0].position = new Vector3D(0.0, 1.0, -1.0);
     light[0].intensity = 0.6;
-    light[1].position = new Vector3D(3.0, 3.0, -1.0);
+    light[1].position = new Vector3D(6.5, 3.0, -1.0);
     light[1].intensity = 0.3;
     light[2].position = new Vector3D(-10.0, 10.0, 9.94);
     light[2].intensity = 0.5;
     
     Tracer tracer;
 
-    tracer.Render(model, 5, light, 3, 75, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(model, 5, light, 3, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";

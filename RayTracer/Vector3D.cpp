@@ -68,9 +68,11 @@ Vector3D Vector3D::Add(Vector3D v2)
 
 Vector3D Vector3D::GetReflection(Vector3D normal)
 {
-    double xComponent = this->x - 2 * this->x * pow(normal.x, 2.0);
-    double yComponent = this->y - 2 * this->y * pow(normal.y, 2.0);
-    double zComponent = this->z - 2 * this->z * pow(normal.z, 2.0);
+    double thisDotProductNormal = this->DotProduct(normal);
+    
+    double xComponent = this->x - 2 * thisDotProductNormal * normal.x;
+    double yComponent = this->y - 2 * thisDotProductNormal * normal.y;
+    double zComponent = this->z - 2 * thisDotProductNormal * normal.z;
     
     return Vector3D(xComponent, yComponent, zComponent);
 }
