@@ -8,6 +8,9 @@
 
 #include "Tracer.h"
 #define REFLECTIVELOSS 0.6
+#define CONSOLEPROGRESSLENGTH 30
+#define LAMBERTIANCONSTANT 8.0
+#define PHONGCONSTANT 0.1
 
 Tracer::Tracer()
 {
@@ -22,9 +25,19 @@ Tracer::~Tracer()
 OutputRasterizer Tracer::Render(Triangle *model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
 {
     OutputRasterizer output (xSpan, ySpan);
+    
+    int consoleProgressCounter = 0;
 
     for(int i = 0; i < xSpan; i++)
     {
+        if (consoleProgressCounter > (xSpan / CONSOLEPROGRESSLENGTH))
+        {
+            cout << "=";
+            consoleProgressCounter = 0;
+        }
+        
+        consoleProgressCounter++;
+        
         for(int j = 0; j < ySpan; j++)
         {
             Vector3D ray = projectionUtils::GetProjection(viewAngleX, xSpan, ySpan, i, j);
@@ -43,8 +56,9 @@ Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSour
 {
     Vector3D closestReflectedRay;
     Vector3D closestIntersect;
+    Vector3D normal;
     Triangle intersectedTriangle;
-    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, ray, rayOrigin, &closestIntersect, &closestReflectedRay, &intersectedTriangle);
+    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, ray, rayOrigin, &closestIntersect, &normal, &closestReflectedRay, &intersectedTriangle);
     
     Colour output = Colour(0, 0, 0);
     
@@ -56,7 +70,7 @@ Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSour
             
             // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
             // light source is blocked or not
-            Vector3D lightIntersectPoint, lightReflection;
+            Vector3D lightIntersectPoint, lightReflection, lightNormal;
             Triangle lightIntersectTriangle;
             Colour lightContribution = Colour(0, 0, 0);
             
@@ -65,13 +79,23 @@ Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSour
             adjustedIntersect.Scale(0.999);
             
             // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
-            if (!ProcessSingleRayInModel(model, modelLength, intersectToLight, adjustedIntersect, &lightIntersectPoint, &lightReflection, &lightIntersectTriangle))
+            if (!ProcessSingleRayInModel(model, modelLength, intersectToLight, adjustedIntersect, &lightIntersectPoint, &lightNormal, &lightReflection, &lightIntersectTriangle))
             {
-                double angleToLight = intersectToLight.GetAngle(closestReflectedRay);
-                double glossFactor = 1.0 / pow(angleToLight, intersectedTriangle.gloss);
-                lightContribution = intersectedTriangle.colour;
-                lightContribution.Scale(glossFactor);
-                lightContribution.Scale(lightSources[i].intensity);
+                // We should use lambertian and phong shading models here
+                
+                intersectToLight.ToUnitVector();
+                closestReflectedRay.ToUnitVector();
+                double lambertianContributionFactor = intersectToLight.DotProduct(normal) * LAMBERTIANCONSTANT;
+                double phongContributionFactor = pow(closestReflectedRay.DotProduct(intersectToLight), intersectedTriangle.gloss) * PHONGCONSTANT * intersectedTriangle.gloss;
+                
+                Colour lambertianColour = intersectedTriangle.colour;
+                lambertianColour.Scale(lambertianContributionFactor * lightSources[i].intensity);
+                
+                Colour phongColour = intersectedTriangle.colour;
+                phongColour.Scale(phongContributionFactor * lightSources[i].intensity);
+                
+                lightContribution = lambertianColour;
+                lightContribution.Add(phongColour);
             }
             
             output.Add(lightContribution);
@@ -81,6 +105,7 @@ Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSour
         
         if (reflections >= 0)
         {
+            Vector3D* diffuseRays = GenerateDiffuseRays(closestReflectedRay, closestIntersect, 1, 0.9);
             Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, closestReflectedRay, closestIntersect, reflections);
             reflectionColour.Scale(REFLECTIVELOSS);
             output.Add(reflectionColour);
@@ -94,7 +119,7 @@ Colour Tracer::TraceRay(Triangle *model, int modelLength, LightSource *lightSour
     return output;
 }
 
-bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outReflection)
+bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outNormalizedNormal, Vector3D* outReflection)
 {
     // Move the triangle so that its position relative to the origin is the same as its position relative to the ray's
     // starting point
@@ -110,12 +135,12 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
     Vector3D oneToThree = newTriangle.p1.PointToPoint(newTriangle.p3);
     
     // Compute the cross product to get the normal
-    Vector3D normal = oneToTwo.CrossProduct(oneToThree);
-    normal.ToUnitVector();
+    *outNormalizedNormal = oneToTwo.CrossProduct(oneToThree);
+    outNormalizedNormal->ToUnitVector();
     
     // if Normal . RayDirection = 0, it is parallel so will never hit
     
-    double D = normal.DotProduct(ray);
+    double D = outNormalizedNormal->DotProduct(ray);
     
     if (D == 0.0)
     {
@@ -123,7 +148,7 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
     }
     
     // Get the distance from the plane to the origin
-    double d = -newTriangle.p1.DotProduct(normal);
+    double d = -newTriangle.p1.DotProduct(*outNormalizedNormal);
     double t = -d / D;
     
     // Put in a small nominal value to account for rounding errors and ensure we dont hit the surface we are coming off of
@@ -148,7 +173,7 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
         // Add a little relief angle to handle rounding errors
         if (sumOfAngles >= (2 * M_PI - 0.001))
         {
-            *outReflection = outIntersectPoint->GetReflection(normal);
+            *outReflection = outIntersectPoint->GetReflection(*outNormalizedNormal);
             outReflection->ToUnitVector();
            
             return true;
@@ -160,7 +185,7 @@ bool Tracer::ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigi
     }
 }
 
-bool Tracer::ProcessSingleRayInModel(Triangle *model, int modelLength, Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outReflection, Triangle* outIntersectedTriangle)
+bool Tracer::ProcessSingleRayInModel(Triangle *model, int modelLength, Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D* outNormalizedNormal, Vector3D *outReflection, Triangle* outIntersectedTriangle)
 {
     Vector3D reflectedRay;
     Vector3D intersect;
@@ -169,7 +194,7 @@ bool Tracer::ProcessSingleRayInModel(Triangle *model, int modelLength, Vector3D 
     
     while (modelIterator < modelLength)
     {
-        if (this->ProcessSingleRay(model[modelIterator], ray, rayOrigin, &intersect, &reflectedRay))
+        if (this->ProcessSingleRay(model[modelIterator], ray, rayOrigin, &intersect, outNormalizedNormal, &reflectedRay))
         {
             if (!hasIntersect || intersect.GetMagnitude() < outIntersectPoint->GetMagnitude())
             {
@@ -184,4 +209,30 @@ bool Tracer::ProcessSingleRayInModel(Triangle *model, int modelLength, Vector3D 
     }
     
     return hasIntersect;
+}
+
+Vector3D* Tracer::GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOrigin, int sampleCount, double diffuseness)
+{
+    // Need to generate the transformation matrix first
+    // Transform the entire model around the reflected vector, such that the reflected vector is at origin and points in 0,0,1
+    // Generate a set of diffuse ray samples given this
+    
+    primaryRay.ToUnitVector();
+    Vector3D unitX = Vector3D(1.0, 0.0, 0.0);
+    Vector3D unitY = Vector3D(0.0, 1.0, 0.0);
+    Vector3D unitZ = Vector3D(0.0, 0.0, 1.0);
+    double v11 = primaryRay.DotProduct(unitX);
+    double v12 = primaryRay.DotProduct(unitY);
+    double v13 = primaryRay.DotProduct(unitZ);
+    double v21 = primaryRay.DotProduct(unitX);
+    double v22 = primaryRay.DotProduct(unitY);
+    double v23 = primaryRay.DotProduct(unitZ);
+    double v31 = primaryRay.DotProduct(unitX);
+    double v32 = primaryRay.DotProduct(unitY);
+    double v33 = primaryRay.DotProduct(unitZ);
+    
+    TransformationMatrix transform = TransformationMatrix(v11, v12, v13, v21, v22, v23, v31, v32, v33);
+    Vector3D primaryInTermsOfPrimary = transform.TransformVector(primaryRay);
+    
+    return NULL;
 }

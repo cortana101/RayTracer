@@ -20,7 +20,7 @@ class OutputRasterizer
 public:
     OutputRasterizer(int xSize, int ySize);
     ~OutputRasterizer();
-    void SetOutput(int xPos, int yPos, int rVal, int gVal, int bVal);
+    void SetOutput(int xPos, int yPos, double rVal, double gVal, double bVal);
     void WriteToFile(string filename);
 private:
     int xSize;

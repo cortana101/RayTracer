@@ -7,6 +7,7 @@
 //
 
 #include "OutputRasterizer.h"
+#define EXPOSURESCALEFACTOR 0.05
 
 OutputRasterizer::OutputRasterizer(int xSize, int ySize)
 {
@@ -26,8 +27,23 @@ void OutputRasterizer::WriteToFile(string filename)
     int* gArray = new int[this->xSize * this->ySize];
     int* bArray = new int[this->xSize * this->ySize];
     
+    double maxIntensity = 0.0;
+    
     for (int i = 0; i < (this->xSize * this->ySize); i++)
     {
+        double intensity = buffer[i].Intensity();
+        
+        if (intensity > maxIntensity)
+        {
+            maxIntensity = intensity;
+        }
+    }
+    
+    for (int i = 0; i < (this->xSize * this->ySize); i++)
+    {
+        buffer[i].Scale(255 / (maxIntensity * EXPOSURESCALEFACTOR));
+        buffer[i].ApplyLimits();
+        
         rArray[i] = this->buffer[i].rVal;
         gArray[i] = this->buffer[i].gVal;
         bArray[i] = this->buffer[i].bVal;
@@ -37,7 +53,7 @@ void OutputRasterizer::WriteToFile(string filename)
 }
 
 // Sets a particular point on the output buffer to the specified value
-void OutputRasterizer::SetOutput(int xPos, int yPos, int rVal, int gVal, int bVal)
+void OutputRasterizer::SetOutput(int xPos, int yPos, double rVal, double gVal, double bVal)
 {
     Colour* bufferPosition;
     bufferPosition = this->buffer + xPos + yPos * xSize;

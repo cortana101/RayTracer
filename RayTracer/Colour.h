@@ -11,9 +11,9 @@
 
 struct Colour
 {
-    int rVal;
-    int gVal;
-    int bVal;
+    double rVal;
+    double gVal;
+    double bVal;
     
     Colour()
     {
@@ -34,8 +34,6 @@ struct Colour
         rVal *= scaleFactor;
         gVal *= scaleFactor;
         bVal *= scaleFactor;
-        
-        ApplyLimits();
     }
     
     void Add(Colour c2)
@@ -43,8 +41,11 @@ struct Colour
         rVal += c2.rVal;
         gVal += c2.gVal;
         bVal += c2.bVal;
-        
-        ApplyLimits();
+    }
+    
+    double Intensity()
+    {
+        return rVal + gVal + bVal;
     }
     
     void ApplyLimits()

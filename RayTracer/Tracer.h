@@ -16,6 +16,7 @@
 #include "OutputRasterizer.h"
 #include "ProjectionUtils.h"
 #include "LightSource.h"
+#include "TransformationMatrix.h"
 
 class Tracer
 {
@@ -33,10 +34,13 @@ private:
     ///\Param RayOrigin indicates the origin of the ray
     ///\Returns true if we have a hit, false otherwise,
     /// If we hit, we will store the intersection point and the reflection vectors in the 2 provided pointers
-    bool ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outReflection);
+    bool ProcessSingleRay(Triangle triangle, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outNormalizedNormal, Vector3D* outReflection);
     
     /// Does the same thing ProcessSingleRay does, but applies to the entire model rather than to a single triangle
-    bool ProcessSingleRayInModel(Triangle* model, int modelLength, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outReflection, Triangle* outIntersectedTriangle);
+    bool ProcessSingleRayInModel(Triangle* model, int modelLength, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D* outReflection, Triangle* outIntersectedTriangle);
+    
+    /// For a given reflected ray, gets a list of diffuse rays to sample
+    Vector3D* GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOrigin, int sampleCount, double diffuseness);
 };
 
 #endif /* defined(__RayTracer__Tracer__) */

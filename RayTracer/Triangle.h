@@ -26,7 +26,7 @@ public:
     Vector3D p2;
     Vector3D p3;
     
-    /// Determines how glossy an object is, 0 = matt, 1 = full gloss
+    /// The Phong glossiness number, Determines how glossy something is, 0 = matt, > 0 = more glossy
     float gloss;
  
     /// Determines the natural colour of the object
