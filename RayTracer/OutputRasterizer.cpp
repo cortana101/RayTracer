@@ -7,7 +7,7 @@
 //
 
 #include "OutputRasterizer.h"
-#define EXPOSURESCALEFACTOR 0.03
+#define EXPOSURESCALEFACTOR 0.05
 
 OutputRasterizer::OutputRasterizer(int xSize, int ySize)
 {

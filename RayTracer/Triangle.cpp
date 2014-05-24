@@ -47,6 +47,14 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outInterse
     // Compute the cross product to get the normal
     *outNormalizedNormal = oneToTwo.CrossProduct(oneToThree);
     outNormalizedNormal->ToUnitVector();
+
+    // If the normal is in the same general direction as the ray, it means the normal is pointing
+    // away from the viewer, in that case we need to reverse the normal because a lot of other subsequent
+    // calculations depend on the normal pointing towards the viewer
+    if (outNormalizedNormal->DotProduct(ray) > 0.0)
+    {
+        outNormalizedNormal->Scale(-1.0);
+    }
     
     // if Normal . RayDirection = 0, it is parallel so will never hit
     
@@ -85,6 +93,10 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outInterse
         {
             *outReflection = outIntersectPoint->GetReflection(*outNormalizedNormal);
             outReflection->ToUnitVector();
+            
+            // Shift the intersect back to world space
+            rayOrigin.Scale(-1.0);
+            *outIntersectPoint = outIntersectPoint->Add(rayOrigin);
             
             return true;
         }
