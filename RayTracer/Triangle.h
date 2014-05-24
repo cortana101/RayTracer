@@ -13,24 +13,20 @@
 #include "OutputRasterizer.h"
 #include "Vector3D.h"
 #include "Colour.h"
+#include "ModelObject.h"
 
 /// Represents a triangle in 3d space
-class Triangle
+class Triangle : public ModelObject
 {
 public:
     Triangle();
     ~Triangle();
     Triangle TranslateBy(Vector3D movement);
+    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D *outReflection);
     
     Vector3D p1;
     Vector3D p2;
     Vector3D p3;
-    
-    /// The Phong glossiness number, Determines how glossy something is, 0 = matt, > 0 = more glossy
-    float gloss;
- 
-    /// Determines the natural colour of the object
-    Colour colour;
 };
 
 

@@ -15,6 +15,7 @@
 #include "Triangle.h"
 #include "Tracer.h"
 #include "LightSource.h"
+#include "Sphere.h"
 
 // Standard 4:3 format
 #define XSIZE 800
@@ -40,33 +41,44 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    Triangle model[5];
-    model[0].p1 = Vector3D(-0.5, 2.0, 4.5);
-    model[0].p2 = Vector3D(1.5, -1.9, 5.7);
-    model[0].p3 = Vector3D(-2.5, -1.9, 3.2);
-    model[0].gloss = 1000.0;
-    model[0].colour = Colour(120, 10, 10);
-    model[1].p1 = Vector3D(0.5, 1.0, 3.0);
-    model[1].p2 = Vector3D(1.0, -0.5, 2.0);
-    model[1].p3 = Vector3D(0.5, -0.5, 4.0);
-    model[1].gloss = 600.0;
-    model[1].colour = Colour(1, 50, 255);
-    model[2].p1 = Vector3D(0.5, 1.0, 3.0);
-    model[2].p2 = Vector3D(1.0, -0.5, 2.0);
-    model[2].p3 = Vector3D(3.0, 1.5, 3.0);
-    model[2].gloss = 100.0;
-    model[2].colour = Colour(1, 50, 255);
-    model[3].p1 = Vector3D(-3.0, -2.0, 4.0);
-    model[3].p2 = Vector3D(1.0, -2.0, 4.0);
-    model[3].p3 = Vector3D(-3.0, -2.0, 6.0);
-    model[3].gloss = 50.0;
-    model[3].colour = Colour(60, 60, 60);
-    model[4].p1 = Vector3D(-2.4, -2.0, 3.0);
-    model[4].p2 = Vector3D(-1.4, -2.0, 3.75);
-    model[4].p3 = Vector3D(-1.0, -2.0, 2.5);
-    model[4].gloss = 50.0;
-    model[4].colour = Colour(60, 60, 60);
-
+    ModelObject* model[6];
+    Triangle model0, model1, model2, model3, model4;
+    Sphere sphere0;
+    model0.p1 = Vector3D(-0.5, 2.0, 4.5);
+    model0.p2 = Vector3D(1.5, -1.9, 5.7);
+    model0.p3 = Vector3D(-2.5, -1.9, 3.2);
+    model0.gloss = 600.0;
+    model0.colour = Colour(120, 10, 10);
+    model1.p1 = Vector3D(0.5, 1.0, 3.0);
+    model1.p2 = Vector3D(1.0, -0.5, 2.0);
+    model1.p3 = Vector3D(0.5, -0.5, 4.0);
+    model1.gloss = 600.0;
+    model1.colour = Colour(1, 50, 255);
+    model2.p1 = Vector3D(0.5, 1.0, 3.0);
+    model2.p2 = Vector3D(1.0, -0.5, 2.0);
+    model2.p3 = Vector3D(3.0, 1.5, 3.0);
+    model2.gloss = 100.0;
+    model2.colour = Colour(1, 50, 255);
+    model3.p1 = Vector3D(-3.0, -2.0, 4.0);
+    model3.p2 = Vector3D(1.0, -2.0, 4.0);
+    model3.p3 = Vector3D(-3.0, -2.0, 6.0);
+    model3.gloss = 50.0;
+    model3.colour = Colour(60, 60, 60);
+    model4.p1 = Vector3D(-2.4, -2.0, 3.0);
+    model4.p2 = Vector3D(-1.4, -2.0, 3.75);
+    model4.p3 = Vector3D(-1.0, -2.0, 2.5);
+    model4.gloss = 50.0;
+    model4.colour = Colour(60, 60, 60);
+    sphere0 = Sphere(Vector3D(0.0, 0.0, 2.0), 0.25);
+    sphere0.gloss = 500.0;
+    sphere0.colour = Colour(10, 255, 10);
+    
+    model[0] = &model0;
+    model[1] = &model1;
+    model[2] = &model2;
+    model[3] = &model3;
+    model[4] = &model4;
+    model[5] = &sphere0;
     
     // Make a light source directly overhead
     LightSource light[4];
@@ -82,7 +94,7 @@ int main(int argc, const char * argv[])
     
     Tracer tracer;
 
-    tracer.Render(model, 5, light, 2, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(model, 6, light, 4, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
     cout << "Wrote to file\n";
