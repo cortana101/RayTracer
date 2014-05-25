@@ -8,6 +8,9 @@
 
 #ifndef RayTracer_Colour_h
 #define RayTracer_Colour_h
+#define BASECOLOURMAX 255
+
+#include <sstream>
 
 struct Colour
 {
@@ -37,6 +40,18 @@ struct Colour
     Colour Add(Colour c2)
     {
         return Colour(rVal + c2.rVal, gVal + c2.gVal, bVal + c2.bVal);
+    }
+    
+    Colour Multiply(Colour c2)
+    {
+        if (rVal > BASECOLOURMAX || gVal > BASECOLOURMAX || bVal > BASECOLOURMAX)
+        {
+            std::stringstream errorString;
+            errorString << "Should not be multiplying non-base colours together, base colours cannot have any of its values over " << BASECOLOURMAX;
+            throw errorString.str();
+        }
+        
+        return Colour((rVal / BASECOLOURMAX) * c2.rVal, (gVal / BASECOLOURMAX) * c2.gVal, (bVal / BASECOLOURMAX) * c2.bVal);
     }
     
     double Intensity()

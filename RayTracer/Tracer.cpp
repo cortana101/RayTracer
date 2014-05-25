@@ -10,7 +10,7 @@
 #define REFLECTIVELOSS 0.6
 #define CONSOLEPROGRESSLENGTH 60
 #define LAMBERTIANCONSTANT 8.0
-#define PHONGCONSTANT 0.1
+#define PHONGCONSTANT 100
 
 Tracer::Tracer()
 {
@@ -71,6 +71,7 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     
     // pass -1 to ignore model at index to get everything
     bool hasIntersect = ProcessSingleRayInModel(model, modelLength, -1, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
+    ModelObject* intersectedObject = model[outIntersectedModelIndex];
     
     Colour output = Colour(0, 0, 0);
     
@@ -92,14 +93,13 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
             {
                 // We should use lambertian and phong shading models here
                 
-                ModelObject* intersectedObject = model[outIntersectedModelIndex];
                 double reflectRayDotLight = intersectProperties.normalizedReflection.DotProduct(intersectToLight);
                 double lambertianContributionFactor = intersectToLight.DotProduct(intersectProperties.normalizedNormal) * LAMBERTIANCONSTANT;
                 double phongContributionFactor = 0.0;
                 
                 if (reflectRayDotLight > 0.0)
                 {
-                    phongContributionFactor = pow(intersectProperties.normalizedReflection.DotProduct(intersectToLight), intersectedObject->gloss) * PHONGCONSTANT * intersectedObject->gloss;
+                    phongContributionFactor = pow(intersectProperties.normalizedReflection.DotProduct(intersectToLight), intersectedObject->gloss) * PHONGCONSTANT;
                 }
                 
                 if (lambertianContributionFactor < 0.0)
@@ -122,7 +122,9 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
             Vector3D* diffuseRays = GenerateDiffuseRays(intersectProperties.normalizedReflection, intersectProperties.intersectPosition, 1, 0.9);
             Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
             reflectionColour = reflectionColour.Scale(REFLECTIVELOSS);
-            output = output.Add(reflectionColour);
+            
+            // Add after multiple to take into account the surface's reflectivity for each colour
+            output = output.Add(intersectedObject->colour.Multiply(reflectionColour));
         }
     }
     else

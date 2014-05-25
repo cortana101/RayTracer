@@ -63,12 +63,12 @@ int main(int argc, const char * argv[])
     model3.p2 = Vector3D(1.0, -2.0, 4.0);
     model3.p3 = Vector3D(-3.0, -2.0, 6.0);
     model3.gloss = 50.0;
-    model3.colour = Colour(60, 60, 60);
+    model3.colour = Colour(120, 120, 120);
     model4.p1 = Vector3D(-2.4, -2.0, 3.0);
     model4.p2 = Vector3D(-1.4, -2.0, 3.75);
     model4.p3 = Vector3D(-1.0, -2.0, 2.5);
     model4.gloss = 50.0;
-    model4.colour = Colour(60, 60, 60);
+    model4.colour = Colour(120, 120, 120);
     sphere0 = Sphere(Vector3D(0.0, 0.0, 2.5), 0.25);
     sphere0.gloss = 500.0;
     sphere0.colour = Colour(10, 255, 10);
