@@ -157,13 +157,13 @@ void* Tracer::TraceRayThread(void* traceRayParams)
     pthread_exit(NULL);
 }
 
-Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
+Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtIndex, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
 {
     IntersectProperties intersectProperties;
     int outIntersectedModelIndex;
     
     // pass -1 to ignore model at index to get everything
-    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, -1, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
+    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, ignoreModelAtIndex, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
     
     Colour output = Colour(0, 0, 0);
     
@@ -214,7 +214,7 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
         if (reflections >= 0)
         {
             Vector3D* diffuseRays = GenerateDiffuseRays(intersectProperties.normalizedReflection, intersectProperties.intersectPosition, 1, 0.9);
-            Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
+            Colour reflectionColour = TraceRay(model, modelLength, outIntersectedModelIndex, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
             reflectionColour = reflectionColour.Scale(REFLECTIVELOSS);
             
             // Add after multiple to take into account the surface's reflectivity for each colour
@@ -227,6 +227,12 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     }
     
     return output;
+}
+
+Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
+{
+    // Pass -1 to ignore model at index, ie by default we dont ignore anything
+    return TraceRay(model, modelLength, -1, lightSources, lightSourceLength, ray, rayOrigin, reflections);
 }
 
 bool Tracer::ProcessSingleRayInModel(ModelObject **model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, int *outIntersectedObjectIndex, IntersectProperties* outIntersectProperties)

@@ -54,6 +54,9 @@ private:
     
     /// Wraps a single TraceRay thread
     static void* TraceRayThread(void* traceRayParams);
+
+    /// Traces a single ray in the model and gets the output colour
+    static Colour TraceRay(ModelObject **model, int modelLength, int ignoreModelAtIndex, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
     
     /// Traces a single ray in the model and gets the output colour
     static Colour TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
