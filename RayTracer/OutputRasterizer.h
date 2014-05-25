@@ -26,6 +26,7 @@ private:
     int xSize;
     int ySize;
     Colour* buffer;
+    double maxIntensity;
 };
 
 #endif /* defined(__RayTracer__OutputRasterizer__) */

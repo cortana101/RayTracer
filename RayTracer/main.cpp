@@ -30,10 +30,8 @@ OutputRasterizer* writeSample();
 //      Diffuse light source
 //      Refraction
 //      Transparency
-//      Exposure control
 //      Read ply files
 //      Model partitioning data structure
-//      Multi threading
 //      Anti-aliasing
 // Stretch goals:
 //      Post-render effects (e.g particles)

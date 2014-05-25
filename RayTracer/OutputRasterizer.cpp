@@ -14,6 +14,7 @@ OutputRasterizer::OutputRasterizer(int xSize, int ySize)
     this->xSize = xSize;
     this->ySize = ySize;
     this->buffer = new Colour[xSize * ySize];
+    this->maxIntensity = 0.0;
 }
 
 OutputRasterizer::~OutputRasterizer()
@@ -26,18 +27,6 @@ void OutputRasterizer::WriteToFile(string filename)
     int* rArray = new int[this->xSize * this->ySize];
     int* gArray = new int[this->xSize * this->ySize];
     int* bArray = new int[this->xSize * this->ySize];
-    
-    double maxIntensity = 0.0;
-    
-    for (int i = 0; i < (this->xSize * this->ySize); i++)
-    {
-        double intensity = buffer[i].Intensity();
-        
-        if (intensity > maxIntensity)
-        {
-            maxIntensity = intensity;
-        }
-    }
     
     for (int i = 0; i < (this->xSize * this->ySize); i++)
     {
@@ -61,4 +50,9 @@ void OutputRasterizer::SetOutput(int xPos, int yPos, double rVal, double gVal, d
     bufferPosition->rVal = rVal;
     bufferPosition->gVal = gVal;
     bufferPosition->bVal = bVal;
+    
+    if (this->maxIntensity < bufferPosition->Intensity())
+    {
+        this->maxIntensity = bufferPosition->Intensity();
+    }
 }

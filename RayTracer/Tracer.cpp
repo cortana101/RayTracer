@@ -7,10 +7,14 @@
 //
 
 #include "Tracer.h"
+#include <pthread.h>
+#include <unistd.h>
 #define REFLECTIVELOSS 0.6
 #define CONSOLEPROGRESSLENGTH 60
 #define LAMBERTIANCONSTANT 8.0
 #define PHONGCONSTANT 100
+#define NUMCONCURRENTTHREADS 4
+#define UPDATEPROGRESSDELAYMS 100
 
 Tracer::Tracer()
 {
@@ -25,9 +29,7 @@ Tracer::~Tracer()
 OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
 {
     OutputRasterizer output (xSpan, ySpan);
-    
-    int consoleProgressCounter = 0;
-    
+   
     cout << "|";
     
     // Start at 2 to account for the start and end pipe chars
@@ -38,30 +40,121 @@ OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSourc
     
     cout << "|\n";
     cout.flush();
-
-    for(int i = 0; i < xSpan; i++)
+    
+    // Used as a bag of flags to tell which threads have finished
+    bool isThreadRunning[NUMCONCURRENTTHREADS];
+    std::fill(isThreadRunning, isThreadRunning + NUMCONCURRENTTHREADS, false);
+    
+    // Make 1 more thread than the number of concurrent worker threads to hold the print progress thread
+    pthread_t threads[NUMCONCURRENTTHREADS + 1];
+    
+    // PixelProgress stores the global progress across all threads, its basically a pseudo-queue, all the threads
+    // will grab a pixel to work on based on the pixel progress counter and it will be incremented every time a thread
+    // picks up a pixel to work on
+    int pixelProgress = 0;
+    int totalPixelCount = xSpan * ySpan;
+    
+    // Since the threads will be updating pixel progresses, we should lock it to avoid race conditions
+    pthread_mutex_t pixelProgressMutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    void* status;
+    
+    ProgressParams progressParam;
+    progressParam.pixelProgress = &pixelProgress;
+    progressParam.totalPixelCount = totalPixelCount;
+    
+    for(int i = 0; i < NUMCONCURRENTTHREADS; i++)
     {
-        if (consoleProgressCounter > (xSpan / CONSOLEPROGRESSLENGTH))
+        TraceRayParams parameters;
+        parameters.model = model;
+        parameters.modelLength = modelLength;
+        parameters.lightSources = lightSources;
+        parameters.lightSourceLength = lightSourceLength;
+        parameters.reflectionDepth = 4;
+        parameters.outputBuffer = &output;
+        parameters.progress = progressParam;
+        parameters.xSpan = xSpan;
+        parameters.ySpan = ySpan;
+        parameters.viewAngleX = viewAngleX;
+        parameters.pixelProgressMutex = pixelProgressMutex;
+        
+        void *(*TraceRayFunction)(void*);
+        TraceRayFunction = &Tracer::TraceRayThread;
+       
+        pthread_create(&threads[i], NULL, TraceRayFunction, (void*)&parameters);
+    }
+    
+    void *(*PrintProgressFunction)(void*);
+    PrintProgressFunction = &Tracer::PrintProgress;
+    
+    pthread_create(&threads[NUMCONCURRENTTHREADS], NULL, PrintProgressFunction, (void*)&progressParam);
+    
+    pthread_attr_destroy(&attr);
+    
+    for (int i = 0; i < NUMCONCURRENTTHREADS + 1; i++)
+    {
+        pthread_join(threads[i], &status);
+    }
+    
+    return output;
+}
+
+void* Tracer::PrintProgress(void *printProgressParams)
+{
+    ProgressParams* printProgressParameters = (ProgressParams*)printProgressParams;
+    
+    int stepSize = printProgressParameters->totalPixelCount / CONSOLEPROGRESSLENGTH;
+    int lastStepPosition = 0;
+    
+    while(*printProgressParameters->pixelProgress < printProgressParameters->totalPixelCount)
+    {
+        int progressSteps = (*printProgressParameters->pixelProgress - lastStepPosition * stepSize) / stepSize;
+        
+        for (int i = 0; i < progressSteps; i++)
         {
             cout << "=";
             cout.flush();
-            consoleProgressCounter = 0;
         }
         
-        consoleProgressCounter++;
-        
-        for(int j = 0; j < ySpan; j++)
-        {
-            Vector3D ray = projectionUtils::GetProjection(viewAngleX, xSpan, ySpan, i, j);
-            Vector3D origin = Vector3D(0.0, 0.0, 0.0);
- 
-            // Since the viewport is grounded at the origin, we start tracing with the rays grounded in the origin
-            Colour colour = this->TraceRay(model, modelLength, lightSources, lightSourceLength, ray, origin, 4);
-            output.SetOutput(i, j, colour.rVal, colour.gVal, colour.bVal);
-        }
+        lastStepPosition += progressSteps;
+        usleep(UPDATEPROGRESSDELAYMS * 1000);
     }
+    
+    pthread_exit(NULL);
+}
 
-    return output;
+void* Tracer::TraceRayThread(void* traceRayParams)
+{
+    TraceRayParams* traceRayParameters = (TraceRayParams*)traceRayParams;
+    int currentPixel = 0;
+    
+    while(*traceRayParameters->progress.pixelProgress < traceRayParameters->progress.totalPixelCount)
+    {
+        pthread_mutex_lock(&traceRayParameters->pixelProgressMutex);
+        currentPixel = *traceRayParameters->progress.pixelProgress;
+        *traceRayParameters->progress.pixelProgress += 1;
+        pthread_mutex_unlock(&traceRayParameters->pixelProgressMutex);
+        
+        int currentXPos = currentPixel / traceRayParameters->ySpan;
+        int currentYPos = currentPixel - currentXPos * traceRayParameters->ySpan;
+    
+        Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
+        Vector3D origin = Vector3D(0.0, 0.0, 0.0);
+    
+        Colour outputColour = TraceRay(traceRayParameters->model,
+                                       traceRayParameters->modelLength,
+                                       traceRayParameters->lightSources,
+                                       traceRayParameters->lightSourceLength,
+                                       ray,
+                                       origin,
+                                       traceRayParameters->reflectionDepth);
+    
+        traceRayParameters->outputBuffer->SetOutput(currentXPos, currentYPos, outputColour.rVal, outputColour.gVal, outputColour.bVal);
+    }
+    
+    pthread_exit(NULL);
 }
 
 Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
@@ -71,12 +164,13 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     
     // pass -1 to ignore model at index to get everything
     bool hasIntersect = ProcessSingleRayInModel(model, modelLength, -1, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
-    ModelObject* intersectedObject = model[outIntersectedModelIndex];
     
     Colour output = Colour(0, 0, 0);
     
     if(hasIntersect)
     {
+        ModelObject* intersectedObject = model[outIntersectedModelIndex];
+        
         for (int i = 0; i < lightSourceLength; i++)
         {
             Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position).ToUnitVector();
