@@ -33,12 +33,12 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
 {
     // Move the triangle so that its position relative to the origin is the same as its position relative to the ray's
     // starting point
-    rayOrigin.Scale(-1.0);
+    rayOrigin = rayOrigin.Scale(-1.0);
     Triangle newTriangle = this->TranslateBy(rayOrigin);
     newTriangle.gloss = this->gloss;
     newTriangle.colour = this->colour;
     
-    ray.ToUnitVector();
+    ray = ray.ToUnitVector();
     
     // Get the normal of the triangle
     Vector3D oneToTwo = newTriangle.p1.PointToPoint(newTriangle.p2);
@@ -46,14 +46,14 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
     
     // Compute the cross product to get the normal
     outIntersectProperties->normalizedNormal = oneToTwo.CrossProduct(oneToThree);
-    outIntersectProperties->normalizedNormal.ToUnitVector();
+    outIntersectProperties->normalizedNormal = outIntersectProperties->normalizedNormal.ToUnitVector();
 
     // If the normal is in the same general direction as the ray, it means the normal is pointing
     // away from the viewer, in that case we need to reverse the normal because a lot of other subsequent
     // calculations depend on the normal pointing towards the viewer
     if (outIntersectProperties->normalizedNormal.DotProduct(ray) > 0.0)
     {
-        outIntersectProperties->normalizedNormal.Scale(-1.0);
+        outIntersectProperties->normalizedNormal = outIntersectProperties->normalizedNormal.Scale(-1.0);
     }
     
     // if Normal . RayDirection = 0, it is parallel so will never hit
@@ -79,7 +79,7 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
     {
         // Scale the ray by t to get the exact point of intersection
         outIntersectProperties->intersectPosition = ray;
-        outIntersectProperties->intersectPosition.Scale(t);
+        outIntersectProperties->intersectPosition = outIntersectProperties->intersectPosition.Scale(t);
         
         // Get angle between all 3 and see if they sum to 360
         Vector3D iToOne = outIntersectProperties->intersectPosition.PointToPoint(newTriangle.p1);
@@ -92,10 +92,10 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
         if (sumOfAngles >= (2 * M_PI - 0.001))
         {
             outIntersectProperties->normalizedReflection = outIntersectProperties->intersectPosition.GetReflection(outIntersectProperties->normalizedNormal);
-            outIntersectProperties->normalizedReflection.ToUnitVector();
+            outIntersectProperties->normalizedReflection = outIntersectProperties->normalizedReflection.ToUnitVector();
             
             // Shift the intersect back to world space
-            rayOrigin.Scale(-1.0);
+            rayOrigin = rayOrigin.Scale(-1.0);
             outIntersectProperties->intersectPosition = outIntersectProperties->intersectPosition.Add(rayOrigin);
             
             return true;

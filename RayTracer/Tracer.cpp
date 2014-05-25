@@ -8,7 +8,7 @@
 
 #include "Tracer.h"
 #define REFLECTIVELOSS 0.6
-#define CONSOLEPROGRESSLENGTH 30
+#define CONSOLEPROGRESSLENGTH 60
 #define LAMBERTIANCONSTANT 8.0
 #define PHONGCONSTANT 0.1
 
@@ -27,12 +27,24 @@ OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSourc
     OutputRasterizer output (xSpan, ySpan);
     
     int consoleProgressCounter = 0;
+    
+    cout << "|";
+    
+    // Start at 2 to account for the start and end pipe chars
+    for(int i = 2; i < CONSOLEPROGRESSLENGTH; i++)
+    {
+        cout << ".";
+    }
+    
+    cout << "|\n";
+    cout.flush();
 
     for(int i = 0; i < xSpan; i++)
     {
         if (consoleProgressCounter > (xSpan / CONSOLEPROGRESSLENGTH))
         {
             cout << "=";
+            cout.flush();
             consoleProgressCounter = 0;
         }
         
@@ -66,14 +78,12 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     {
         for (int i = 0; i < lightSourceLength; i++)
         {
-            Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position);
-            intersectToLight.ToUnitVector();
+            Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position).ToUnitVector();
             
             // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
             // light source is blocked or not
             IntersectProperties lightIntersectProperties;
             int lightIntersectedModelIndex;
-            Colour lightContribution = Colour(0, 0, 0);
             
             // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
             // If the dot product of the normal and the path to the light is negative, it means the path to the light is behind the reflecting object, thus
@@ -83,7 +93,6 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
                 // We should use lambertian and phong shading models here
                 
                 ModelObject* intersectedObject = model[outIntersectedModelIndex];
-                intersectToLight.ToUnitVector();
                 double reflectRayDotLight = intersectProperties.normalizedReflection.DotProduct(intersectToLight);
                 double lambertianContributionFactor = intersectToLight.DotProduct(intersectProperties.normalizedNormal) * LAMBERTIANCONSTANT;
                 double phongContributionFactor = 0.0;
@@ -98,17 +107,12 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
                     lambertianContributionFactor = 0.0;
                 }
                 
-                Colour lambertianColour = intersectedObject->colour;
-                lambertianColour.Scale(lambertianContributionFactor * lightSources[i].intensity);
+                Colour lambertianColour = intersectedObject->colour.Scale(lambertianContributionFactor * lightSources[i].intensity);
                 
-                Colour phongColour = intersectedObject->colour;
-                phongColour.Scale(phongContributionFactor * lightSources[i].intensity);
+                Colour phongColour = intersectedObject->colour.Scale(phongContributionFactor * lightSources[i].intensity);
                 
-                lightContribution = lambertianColour;
-                lightContribution.Add(phongColour);
+                output = output.Add(lambertianColour.Add(phongColour));
             }
-            
-            output.Add(lightContribution);
         }
         
         reflections--;
@@ -117,8 +121,8 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
         {
             Vector3D* diffuseRays = GenerateDiffuseRays(intersectProperties.normalizedReflection, intersectProperties.intersectPosition, 1, 0.9);
             Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
-            reflectionColour.Scale(REFLECTIVELOSS);
-            output.Add(reflectionColour);
+            reflectionColour = reflectionColour.Scale(REFLECTIVELOSS);
+            output = output.Add(reflectionColour);
         }
     }
     else
@@ -159,7 +163,7 @@ Vector3D* Tracer::GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOr
     // Transform the entire model around the reflected vector, such that the reflected vector is at origin and points in 0,0,1
     // Generate a set of diffuse ray samples given this
     
-    primaryRay.ToUnitVector();
+    primaryRay = primaryRay.ToUnitVector();
     Vector3D unitX = Vector3D(1.0, 0.0, 0.0);
     Vector3D unitY = Vector3D(0.0, 1.0, 0.0);
     Vector3D unitZ = Vector3D(0.0, 0.0, 1.0);

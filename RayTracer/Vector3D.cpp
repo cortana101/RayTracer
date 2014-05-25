@@ -48,17 +48,15 @@ double Vector3D::GetAngle(Vector3D v2)
     return acos(DotProduct(v2) / (GetMagnitude() * v2.GetMagnitude()));
 }
 
-void Vector3D::ToUnitVector()
+Vector3D Vector3D::ToUnitVector()
 {
     double magnitude = GetMagnitude();
-    this->Scale(1 / magnitude);
+    return this->Scale(1 / magnitude);
 }
 
-void Vector3D::Scale(double scaleFactor)
+Vector3D Vector3D::Scale(double scaleFactor)
 {
-    this->x *= scaleFactor;
-    this->y *= scaleFactor;
-    this->z *= scaleFactor;
+    return Vector3D(this->x * scaleFactor, this->y * scaleFactor, this->z * scaleFactor);
 }
 
 Vector3D Vector3D::Add(Vector3D v2)

@@ -41,7 +41,7 @@ void OutputRasterizer::WriteToFile(string filename)
     
     for (int i = 0; i < (this->xSize * this->ySize); i++)
     {
-        buffer[i].Scale(255 / (maxIntensity * EXPOSURESCALEFACTOR));
+        buffer[i] = buffer[i].Scale(255 / (maxIntensity * EXPOSURESCALEFACTOR));
         buffer[i].ApplyLimits();
         
         rArray[i] = this->buffer[i].rVal;

@@ -29,18 +29,14 @@ struct Colour
         bVal = b;
     }
     
-    void Scale(float scaleFactor)
+    Colour Scale(float scaleFactor)
     {
-        rVal *= scaleFactor;
-        gVal *= scaleFactor;
-        bVal *= scaleFactor;
+        return Colour(rVal * scaleFactor, gVal * scaleFactor, bVal * scaleFactor);
     }
     
-    void Add(Colour c2)
+    Colour Add(Colour c2)
     {
-        rVal += c2.rVal;
-        gVal += c2.gVal;
-        bVal += c2.bVal;
+        return Colour(rVal + c2.rVal, gVal + c2.gVal, bVal + c2.bVal);
     }
     
     double Intensity()

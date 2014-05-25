@@ -101,11 +101,13 @@ int main(int argc, const char * argv[])
     light[3].intensity = 1.0;
     
     Tracer tracer;
+    
+    cout << "Rendering...\n";
 
     tracer.Render(model, 8, light, 4, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     // insert code here...
-    cout << "Wrote to file\n";
+    cout << "Done\n";
     
     // General flow:
         // Need a class for handling projection of the viewport and generating the rays from the camera

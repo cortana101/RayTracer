@@ -17,8 +17,6 @@
 class ModelObject
 {
 public:
-    //ModelObject();
-    //~ModelObject();
     virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties) = 0;
     
     /// The Phong glossiness number, Determines how glossy something is, 0 = matt, > 0 = more glossy

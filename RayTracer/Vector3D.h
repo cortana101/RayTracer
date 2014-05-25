@@ -31,7 +31,7 @@ public:
     double GetAngle(Vector3D v2);
     
     /// Converts the provided vector to a unit vector
-    void ToUnitVector();
+    Vector3D ToUnitVector();
     
     /// Gets a unit vector in the direction of the reflected ray given
     /// the incident ray and the normal
@@ -41,7 +41,7 @@ public:
     Vector3D* Clone();
     
     /// Scales the current vector by the provided factor
-    void Scale(double scaleFactor);
+    Vector3D Scale(double scaleFactor);
     
     /// Gets the cross product between the current vector and the provided vector
     Vector3D CrossProduct(Vector3D v2);
