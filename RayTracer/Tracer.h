@@ -18,6 +18,7 @@
 #include "LightSource.h"
 #include "TransformationMatrix.h"
 #include "ModelObject.h"
+#include "IntersectProperties.h"
 
 class Tracer
 {
@@ -32,7 +33,7 @@ public:
     Colour TraceRay(ModelObject** model, int modelLength, LightSource* lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
 private:
     /// Does the same thing ProcessSingleRay does, but applies to the entire model rather than to a single triangle
-    bool ProcessSingleRayInModel(ModelObject** model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D* outReflection, int* outIntersectedModelIndex);
+    bool ProcessSingleRayInModel(ModelObject** model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, int* outInteresectObjectIndex, IntersectProperties* outIntersectProperties);
     
     /// For a given reflected ray, gets a list of diffuse rays to sample
     Vector3D* GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOrigin, int sampleCount, double diffuseness);

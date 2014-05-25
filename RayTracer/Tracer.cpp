@@ -54,13 +54,11 @@ OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSourc
 
 Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
 {
-    Vector3D closestReflectedRay;
-    Vector3D closestIntersect;
-    Vector3D normal;
+    IntersectProperties intersectProperties;
     int outIntersectedModelIndex;
     
     // pass -1 to ignore model at index to get everything
-    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, -1, ray, rayOrigin, &closestIntersect, &normal, &closestReflectedRay, &outIntersectedModelIndex);
+    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, -1, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
     
     Colour output = Colour(0, 0, 0);
     
@@ -68,31 +66,31 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     {
         for (int i = 0; i < lightSourceLength; i++)
         {
-            Vector3D intersectToLight = closestIntersect.PointToPoint(*lightSources[i].position);
+            Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position);
+            intersectToLight.ToUnitVector();
             
             // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
             // light source is blocked or not
-            Vector3D lightIntersectPoint, lightReflection, lightNormal;
+            IntersectProperties lightIntersectProperties;
             int lightIntersectedModelIndex;
             Colour lightContribution = Colour(0, 0, 0);
             
             // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
             // If the dot product of the normal and the path to the light is negative, it means the path to the light is behind the reflecting object, thus
             // light cannot possibly reach and we dont have to consider this particular light for this intersection
-            if (!ProcessSingleRayInModel(model, modelLength, outIntersectedModelIndex, intersectToLight, closestIntersect, &lightIntersectPoint, &lightNormal, &lightReflection, &lightIntersectedModelIndex))
+            if (!ProcessSingleRayInModel(model, modelLength, outIntersectedModelIndex, intersectToLight, intersectProperties.intersectPosition, &lightIntersectedModelIndex, &lightIntersectProperties))
             {
                 // We should use lambertian and phong shading models here
                 
                 ModelObject* intersectedObject = model[outIntersectedModelIndex];
                 intersectToLight.ToUnitVector();
-                closestReflectedRay.ToUnitVector();
-                double reflectRayDotLight = closestReflectedRay.DotProduct(intersectToLight);
-                double lambertianContributionFactor = intersectToLight.DotProduct(normal) * LAMBERTIANCONSTANT;
+                double reflectRayDotLight = intersectProperties.normalizedReflection.DotProduct(intersectToLight);
+                double lambertianContributionFactor = intersectToLight.DotProduct(intersectProperties.normalizedNormal) * LAMBERTIANCONSTANT;
                 double phongContributionFactor = 0.0;
                 
                 if (reflectRayDotLight > 0.0)
                 {
-                    phongContributionFactor = pow(closestReflectedRay.DotProduct(intersectToLight), intersectedObject->gloss) * PHONGCONSTANT * intersectedObject->gloss;
+                    phongContributionFactor = pow(intersectProperties.normalizedReflection.DotProduct(intersectToLight), intersectedObject->gloss) * PHONGCONSTANT * intersectedObject->gloss;
                 }
                 
                 if (lambertianContributionFactor < 0.0)
@@ -117,8 +115,8 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
         
         if (reflections >= 0)
         {
-            Vector3D* diffuseRays = GenerateDiffuseRays(closestReflectedRay, closestIntersect, 1, 0.9);
-            Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, closestReflectedRay, closestIntersect, reflections);
+            Vector3D* diffuseRays = GenerateDiffuseRays(intersectProperties.normalizedReflection, intersectProperties.intersectPosition, 1, 0.9);
+            Colour reflectionColour = TraceRay(model, modelLength, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
             reflectionColour.Scale(REFLECTIVELOSS);
             output.Add(reflectionColour);
         }
@@ -131,25 +129,21 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *light
     return output;
 }
 
-bool Tracer::ProcessSingleRayInModel(ModelObject **model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D* outNormalizedNormal, Vector3D *outReflection, int* outIntersectedModelIndex)
+bool Tracer::ProcessSingleRayInModel(ModelObject **model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, int *outIntersectedObjectIndex, IntersectProperties* outIntersectProperties)
 {
-    Vector3D reflectedRay;
-    Vector3D intersect;
     bool hasIntersect = false;
     int modelIterator = 0;
-    Vector3D outLocalNormalizedNormal;
+    IntersectProperties localIntersectProperties;
     
     while (modelIterator < modelLength)
     {
-        if (modelIterator != ignoreModelAtIndex && model[modelIterator]->ProcessRay(ray, rayOrigin, &intersect, &outLocalNormalizedNormal, &reflectedRay))
+        if (modelIterator != ignoreModelAtIndex && model[modelIterator]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
         {
-            if (!hasIntersect || intersect.GetMagnitude() < outIntersectPoint->GetMagnitude())
+            if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
             {
                 hasIntersect = true;
-                *outIntersectPoint = intersect;
-                *outReflection = reflectedRay;
-                *outIntersectedModelIndex = modelIterator;
-                *outNormalizedNormal = outLocalNormalizedNormal;
+                *outIntersectProperties = localIntersectProperties;
+                *outIntersectedObjectIndex = modelIterator;
             }
         }
         

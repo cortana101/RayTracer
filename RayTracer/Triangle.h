@@ -22,7 +22,7 @@ public:
     Triangle();
     ~Triangle();
     Triangle TranslateBy(Vector3D movement);
-    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D *outReflection);
+    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties);
     
     Vector3D p1;
     Vector3D p2;

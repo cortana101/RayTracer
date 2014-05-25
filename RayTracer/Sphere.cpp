@@ -30,7 +30,7 @@ Sphere Sphere::TranslateBy(Vector3D movement)
     return Sphere(this->center.Add(movement), this->radius);
 }
 
-bool Sphere::ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D *outReflection)
+bool Sphere::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties)
 {
     rayOrigin.Scale(-1.0);
     Sphere object = this->TranslateBy(rayOrigin);
@@ -51,15 +51,15 @@ bool Sphere::ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersect
     double t1 = (-b + pow(discriminant, 0.5)) / (2 * a);
     double t2 = (-b - pow(discriminant, 0.5)) / (2 * a);
 
-    *outIntersectPoint = ray;
+    outIntersectProperties->intersectPosition = ray;
     
     if (t1 < t2 && t1 > 0.0)
     {
-        outIntersectPoint->Scale(t1);
+        outIntersectProperties->intersectPosition.Scale(t1);
     }
     else if (t2 < t1 && t2 > 0.0)
     {
-        outIntersectPoint->Scale(t2);
+        outIntersectProperties->intersectPosition.Scale(t2);
     }
     else
     {
@@ -67,14 +67,15 @@ bool Sphere::ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersect
     }
 
     // At this point the intersect point is not the true intersect, it is the intersect after we reset the ray origin to the planar origin
-    *outNormalizedNormal = this->center.PointToPoint(*outIntersectPoint);
-    outNormalizedNormal->ToUnitVector();
+    outIntersectProperties->normalizedNormal = this->center.PointToPoint(outIntersectProperties->intersectPosition);
+    outIntersectProperties->normalizedNormal.ToUnitVector();
     
     // Add the ray origin to get the intersect in the normal plane
-    *outIntersectPoint = outIntersectPoint->Add(rayOrigin);
+    outIntersectProperties->intersectPosition = outIntersectProperties->intersectPosition.Add(rayOrigin);
     
-    *outReflection = outIntersectPoint->GetReflection(*outNormalizedNormal);
-    
+    outIntersectProperties->normalizedReflection = outIntersectProperties->intersectPosition.GetReflection(outIntersectProperties->normalizedNormal);
+    outIntersectProperties->normalizedReflection.ToUnitVector();
+   
     return true;
 }
 

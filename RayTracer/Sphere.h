@@ -20,7 +20,7 @@ public:
     Sphere(Vector3D center, double radius);
     ~Sphere();
     Sphere TranslateBy(Vector3D movement);
-    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D *outIntersectPoint, Vector3D *outNormalizedNormal, Vector3D *outReflection);
+    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties);
     
 private:
     Vector3D center;

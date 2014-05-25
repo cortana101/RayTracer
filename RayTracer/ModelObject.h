@@ -12,13 +12,14 @@
 #include <iostream>
 #include "Vector3D.h"
 #include "Colour.h"
+#include "IntersectProperties.h"
 
 class ModelObject
 {
 public:
     //ModelObject();
     //~ModelObject();
-    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectPoint, Vector3D* outNormalizedNormal, Vector3D* outReflection) = 0;
+    virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties) = 0;
     
     /// The Phong glossiness number, Determines how glossy something is, 0 = matt, > 0 = more glossy
     float gloss;
