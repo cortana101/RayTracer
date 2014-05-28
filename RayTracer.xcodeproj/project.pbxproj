@@ -7,34 +7,87 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B5671D461932C7A6001E0535 /* PlyFileParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5671D441932C7A6001E0535 /* PlyFileParser.cpp */; };
+		B58CA4D119358ED30011D104 /* QtCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B58CA4D019358ED30011D104 /* QtCore.framework */; };
+		B58CA4D31935AACF0011D104 /* testModel.ply in Copy Files */ = {isa = PBXBuildFile; fileRef = B58CA4D21935AA5E0011D104 /* testModel.ply */; };
+		B58CA4D41935AADA0011D104 /* testModel.ply in CopyFiles */ = {isa = PBXBuildFile; fileRef = B58CA4D21935AA5E0011D104 /* testModel.ply */; };
 		B5B3CD471929864100E09552 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD461929864100E09552 /* main.cpp */; };
-		B5B3CD491929864100E09552 /* RayTracer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = B5B3CD481929864100E09552 /* RayTracer.1 */; };
+		B5B3CD491929864100E09552 /* RayTracer.1 in Copy Files */ = {isa = PBXBuildFile; fileRef = B5B3CD481929864100E09552 /* RayTracer.1 */; };
+		B5B3CD561929A1A900E09552 /* ppma_io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD541929A1A900E09552 /* ppma_io.cpp */; };
+		B5B3CD581929A24D00E09552 /* RayTracer in CopyFiles */ = {isa = PBXBuildFile; fileRef = B5B3CD431929864100E09552 /* RayTracer */; };
+		B5B3CD5B1929A8CD00E09552 /* OutputRasterizer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD591929A8CD00E09552 /* OutputRasterizer.cpp */; };
+		B5B3CD5E1929B80A00E09552 /* Vector3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD5C1929B80A00E09552 /* Vector3D.cpp */; };
+		B5B3CD611929B9E600E09552 /* ProjectionUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD5F1929B9E600E09552 /* ProjectionUtils.cpp */; };
+		B5B3CD641929C7DA00E09552 /* Tracer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD621929C7DA00E09552 /* Tracer.cpp */; };
+		B5CB27EF192E525200725E64 /* Triangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5CB27EE192E525200725E64 /* Triangle.cpp */; };
+		B5CB27F2192FAB5400725E64 /* TransformationMatrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5CB27F0192FAB5400725E64 /* TransformationMatrix.cpp */; };
+		B5CB27F519304F1200725E64 /* Sphere.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5CB27F319304F1200725E64 /* Sphere.cpp */; };
+		B5CB27FB1931659300725E64 /* IntersectProperties.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5CB27F91931659300725E64 /* IntersectProperties.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		B5B3CD411929864100E09552 /* CopyFiles */ = {
+		B5B3CD411929864100E09552 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				B5B3CD491929864100E09552 /* RayTracer.1 in CopyFiles */,
+				B58CA4D31935AACF0011D104 /* testModel.ply in Copy Files */,
+				B5B3CD491929864100E09552 /* RayTracer.1 in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 1;
+		};
+		B5B3CD571929A23600E09552 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "~/Documents/GtiRepo/RayTracer/bin";
+			dstSubfolderSpec = 0;
+			files = (
+				B58CA4D41935AADA0011D104 /* testModel.ply in CopyFiles */,
+				B5B3CD581929A24D00E09552 /* RayTracer in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B5671D441932C7A6001E0535 /* PlyFileParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PlyFileParser.cpp; sourceTree = "<group>"; };
+		B5671D451932C7A6001E0535 /* PlyFileParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlyFileParser.h; sourceTree = "<group>"; };
+		B58CA4D019358ED30011D104 /* QtCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtCore.framework; path = ../../../Qt/5.2.1/clang_64/lib/QtCore.framework; sourceTree = "<group>"; };
+		B58CA4D21935AA5E0011D104 /* testModel.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = testModel.ply; sourceTree = "<group>"; };
 		B5B3CD431929864100E09552 /* RayTracer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RayTracer; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5B3CD461929864100E09552 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B5B3CD481929864100E09552 /* RayTracer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = RayTracer.1; sourceTree = "<group>"; };
+		B5B3CD541929A1A900E09552 /* ppma_io.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ppma_io.cpp; sourceTree = "<group>"; };
+		B5B3CD551929A1A900E09552 /* ppma_io.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ppma_io.h; sourceTree = "<group>"; };
+		B5B3CD591929A8CD00E09552 /* OutputRasterizer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OutputRasterizer.cpp; sourceTree = "<group>"; };
+		B5B3CD5A1929A8CD00E09552 /* OutputRasterizer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OutputRasterizer.h; sourceTree = "<group>"; };
+		B5B3CD5C1929B80A00E09552 /* Vector3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Vector3D.cpp; sourceTree = "<group>"; };
+		B5B3CD5D1929B80A00E09552 /* Vector3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Vector3D.h; sourceTree = "<group>"; };
+		B5B3CD5F1929B9E600E09552 /* ProjectionUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectionUtils.cpp; sourceTree = "<group>"; };
+		B5B3CD601929B9E600E09552 /* ProjectionUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectionUtils.h; sourceTree = "<group>"; };
+		B5B3CD621929C7DA00E09552 /* Tracer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracer.cpp; sourceTree = "<group>"; };
+		B5B3CD631929C7DA00E09552 /* Tracer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tracer.h; sourceTree = "<group>"; };
+		B5B3CD661929C84000E09552 /* Triangle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Triangle.h; sourceTree = "<group>"; };
+		B5B3CD68192B09A800E09552 /* LightSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
+		B5CB27ED192DAA1900725E64 /* Colour.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Colour.h; sourceTree = "<group>"; };
+		B5CB27EE192E525200725E64 /* Triangle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Triangle.cpp; sourceTree = "<group>"; };
+		B5CB27F0192FAB5400725E64 /* TransformationMatrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TransformationMatrix.cpp; sourceTree = "<group>"; };
+		B5CB27F1192FAB5400725E64 /* TransformationMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TransformationMatrix.h; sourceTree = "<group>"; };
+		B5CB27F319304F1200725E64 /* Sphere.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Sphere.cpp; sourceTree = "<group>"; };
+		B5CB27F419304F1200725E64 /* Sphere.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sphere.h; sourceTree = "<group>"; };
+		B5CB27F71930503600725E64 /* ModelObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModelObject.h; sourceTree = "<group>"; };
+		B5CB27F91931659300725E64 /* IntersectProperties.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IntersectProperties.cpp; sourceTree = "<group>"; };
+		B5CB27FA1931659300725E64 /* IntersectProperties.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntersectProperties.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		B5B3CD401929864100E09552 /* Frameworks */ = {
+		B58CA4C91935805F0011D104 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B58CA4D119358ED30011D104 /* QtCore.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,6 +97,7 @@
 		B5B3CD3A1929864100E09552 = {
 			isa = PBXGroup;
 			children = (
+				B58CA4D019358ED30011D104 /* QtCore.framework */,
 				B5B3CD451929864100E09552 /* RayTracer */,
 				B5B3CD441929864100E09552 /* Products */,
 			);
@@ -60,13 +114,53 @@
 		B5B3CD451929864100E09552 /* RayTracer */ = {
 			isa = PBXGroup;
 			children = (
+				B58CA4D21935AA5E0011D104 /* testModel.ply */,
 				B5B3CD461929864100E09552 /* main.cpp */,
+				B5671D441932C7A6001E0535 /* PlyFileParser.cpp */,
+				B5671D451932C7A6001E0535 /* PlyFileParser.h */,
+				B5B3CD591929A8CD00E09552 /* OutputRasterizer.cpp */,
+				B5B3CD5A1929A8CD00E09552 /* OutputRasterizer.h */,
+				B5B3CD541929A1A900E09552 /* ppma_io.cpp */,
+				B5B3CD551929A1A900E09552 /* ppma_io.h */,
 				B5B3CD481929864100E09552 /* RayTracer.1 */,
+				B5B3CD5C1929B80A00E09552 /* Vector3D.cpp */,
+				B5B3CD5D1929B80A00E09552 /* Vector3D.h */,
+				B5B3CD5F1929B9E600E09552 /* ProjectionUtils.cpp */,
+				B5B3CD601929B9E600E09552 /* ProjectionUtils.h */,
+				B5CB27F91931659300725E64 /* IntersectProperties.cpp */,
+				B5CB27FA1931659300725E64 /* IntersectProperties.h */,
+				B5B3CD621929C7DA00E09552 /* Tracer.cpp */,
+				B5B3CD631929C7DA00E09552 /* Tracer.h */,
+				B5CB27F0192FAB5400725E64 /* TransformationMatrix.cpp */,
+				B5CB27F1192FAB5400725E64 /* TransformationMatrix.h */,
+				B5B3CD68192B09A800E09552 /* LightSource.h */,
+				B5B3CD661929C84000E09552 /* Triangle.h */,
+				B5CB27EE192E525200725E64 /* Triangle.cpp */,
+				B5CB27F319304F1200725E64 /* Sphere.cpp */,
+				B5CB27F419304F1200725E64 /* Sphere.h */,
+				B5CB27F71930503600725E64 /* ModelObject.h */,
+				B5CB27ED192DAA1900725E64 /* Colour.h */,
 			);
 			path = RayTracer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		B5B3CD4F19299FD300E09552 /* Makefile */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = B5B3CD5019299FD300E09552 /* Build configuration list for PBXLegacyTarget "Makefile" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			dependencies = (
+			);
+			name = Makefile;
+			passBuildSettingsInEnvironment = 1;
+			productName = Makefile;
+		};
+/* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
 		B5B3CD421929864100E09552 /* RayTracer */ = {
@@ -74,8 +168,9 @@
 			buildConfigurationList = B5B3CD4C1929864100E09552 /* Build configuration list for PBXNativeTarget "RayTracer" */;
 			buildPhases = (
 				B5B3CD3F1929864100E09552 /* Sources */,
-				B5B3CD401929864100E09552 /* Frameworks */,
-				B5B3CD411929864100E09552 /* CopyFiles */,
+				B58CA4C91935805F0011D104 /* Frameworks */,
+				B5B3CD411929864100E09552 /* Copy Files */,
+				B5B3CD571929A23600E09552 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -108,6 +203,7 @@
 			projectRoot = "";
 			targets = (
 				B5B3CD421929864100E09552 /* RayTracer */,
+				B5B3CD4F19299FD300E09552 /* Makefile */,
 			);
 		};
 /* End PBXProject section */
@@ -117,7 +213,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B5CB27FB1931659300725E64 /* IntersectProperties.cpp in Sources */,
+				B5B3CD641929C7DA00E09552 /* Tracer.cpp in Sources */,
+				B5CB27F519304F1200725E64 /* Sphere.cpp in Sources */,
 				B5B3CD471929864100E09552 /* main.cpp in Sources */,
+				B5B3CD5B1929A8CD00E09552 /* OutputRasterizer.cpp in Sources */,
+				B5CB27EF192E525200725E64 /* Triangle.cpp in Sources */,
+				B5671D461932C7A6001E0535 /* PlyFileParser.cpp in Sources */,
+				B5B3CD561929A1A900E09552 /* ppma_io.cpp in Sources */,
+				B5CB27F2192FAB5400725E64 /* TransformationMatrix.cpp in Sources */,
+				B5B3CD5E1929B80A00E09552 /* Vector3D.cpp in Sources */,
+				B5B3CD611929B9E600E09552 /* ProjectionUtils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,6 +303,17 @@
 		B5B3CD4D1929864100E09552 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"/Users/cortana101/Qt/5.2.1/clang_64/lib/**",
+					"$(PROJECT_DIR)/Includes",
+					/Users/cortana101/Qt/5.2.1/clang_64/lib,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/Users/cortana101/Qt/5.2.1/clang_64/lib/**",
+				);
+				LIBRARY_SEARCH_PATHS = "/Users/cortana101/Qt/5.2.1/clang_64/lib/**";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -204,6 +321,42 @@
 		B5B3CD4E1929864100E09552 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"/Users/cortana101/Qt/5.2.1/clang_64/lib/**",
+					"$(PROJECT_DIR)/Includes",
+					/Users/cortana101/Qt/5.2.1/clang_64/lib,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/Users/cortana101/Qt/5.2.1/clang_64/lib/**",
+				);
+				LIBRARY_SEARCH_PATHS = "/Users/cortana101/Qt/5.2.1/clang_64/lib/**";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		B5B3CD5119299FD300E09552 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUGGING_SYMBOLS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B5B3CD5219299FD300E09552 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -227,6 +380,16 @@
 				B5B3CD4E1929864100E09552 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5B3CD5019299FD300E09552 /* Build configuration list for PBXLegacyTarget "Makefile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5B3CD5119299FD300E09552 /* Debug */,
+				B5B3CD5219299FD300E09552 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
