@@ -19,6 +19,8 @@
 #include "Sphere.h"
 #include "PlyFileParser.h"
 
+#include "Polygon.h"
+
 // Standard 4:3 format
 #define XSIZE 1200
 #define YSIZE 900
@@ -42,7 +44,30 @@ OutputRasterizer* writeSample();
 int main(int argc, const char * argv[])
 {
     int modelLength;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("testModel.ply", &modelLength);
+    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
+    /*  Quick and dirty polygon clipping test
+     
+    Triangle* testModel = new Triangle();
+    testModel->p1 = Vector3D(0.0, 0.0, 2.0);
+    testModel->p2 = Vector3D(1.0, 1.0, 3.0);
+    testModel->p3 = Vector3D(2.0, 0.0, 4.0);
+    testModel->colour = Colour(200, 200, 200);
+    testModel->gloss = 200.0;
+    
+    Polygon testPolygon = Polygon(*testModel);
+    testPolygon.Clip(PartitionPlaneType::X, 1.5, PartitionKeepDirection::Negative);
+    testPolygon.Clip(PartitionPlaneType::Y, 0.9, PartitionKeepDirection::Negative);
+    testPolygon.Clip(PartitionPlaneType::X, 0.3, PartitionKeepDirection::Positive);
+    testPolygon.Clip(PartitionPlaneType::Z, 3.0, PartitionKeepDirection::Negative);
+    
+    int numTriangles;
+    Triangle* triangles = testPolygon.Triangulate(&numTriangles);
+    
+    ModelObject* staticModel[numTriangles];
+    for (int i = 0; i < numTriangles; i++)
+    {
+        staticModel[i] = &triangles[i];
+    }*/
     
     // Make a light source directly overhead
     LightSource light[4];

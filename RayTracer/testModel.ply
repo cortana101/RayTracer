@@ -10,7 +10,7 @@ property float colorG
 property float colorB
 property float gloss
 property list uchar int vertex_indices
-element sphere 3
+element sphere 8
 property float colorR
 property float colorG
 property float colorB
@@ -43,3 +43,8 @@ end_header
 10 255 10 500 0.0 0.0 2.5 0.25
 200 150 10 500 -0.5 0.25 2.5 0.25
 150 10 255 500 -0.8 -0.7 3.5 0.25
+150 50 255 500 -0.3 -0.8 3.5 0.25
+130 100 255 500 0.2 -0.9 3.5 0.25
+110 150 255 500 0.2 -1.5 3.5 0.25
+90 200 255 500 -0.3 -1.4 3.5 0.25
+70 255 255 500 -0.8 -1.3 3.5 0.25

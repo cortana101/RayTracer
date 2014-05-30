@@ -15,6 +15,8 @@ class Vector3D
 {
 public:
     friend class TransformationMatrix;
+    friend class ModelContainerPartition;
+    friend class Polygon;
     Vector3D();
     Vector3D(double x, double y, double z);
     ~Vector3D();
