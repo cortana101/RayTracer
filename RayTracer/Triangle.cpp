@@ -76,10 +76,8 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
     // Get the distance from the plane to the origin
     double d = -newTriangle.p1.DotProduct(outIntersectProperties->normalizedNormal);
     double t = -d / D;
-    
-    // Put in a small nominal value to account for rounding errors and ensure we dont hit the surface we are coming off of
-    // The more proper solution here is probably to remove the original triangle from the model
-    if (t <= 0.0001)
+
+    if (t < 0.0)
     {
         return false;
     }
@@ -96,7 +94,7 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
         double sumOfAngles = iToOne.GetAngle(iToTwo) + iToTwo.GetAngle(iToThree) + iToThree.GetAngle(iToOne);
         
         // Add a little relief angle to handle rounding errors
-        if (sumOfAngles >= (2 * M_PI - 0.001))
+        if (sumOfAngles >= (2 * M_PI - 0.000000001))
         {
             outIntersectProperties->normalizedReflection = outIntersectProperties->intersectPosition.GetReflection(outIntersectProperties->normalizedNormal);
             outIntersectProperties->normalizedReflection = outIntersectProperties->normalizedReflection.ToUnitVector();

@@ -163,7 +163,7 @@ Colour Tracer::TraceRay(ModelContainer modelContainer, ModelObject* ignoredModel
     //int outIntersectedModelIndex;
     
     // pass NULL to the ignored model in order to include everything
-    bool hasIntersect = modelContainer.TryGetIntersection(ray, rayOrigin, NULL, &outIntersectedObject, &intersectProperties);
+    bool hasIntersect = modelContainer.TryGetIntersection(ray, rayOrigin, ignoredModel, &outIntersectedObject, &intersectProperties);
     
     Colour output = Colour(0, 0, 0);
     
