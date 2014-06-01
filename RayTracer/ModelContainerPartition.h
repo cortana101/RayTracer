@@ -35,7 +35,7 @@ public:
     
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
     
-    // We must also remember the model object index as it stands in the original model object array so we can do our reflection ignore logic
+    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
 };
 
 #endif /* defined(__RayTracer__ModelContainerPartition__) */

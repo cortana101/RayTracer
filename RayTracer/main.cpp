@@ -75,7 +75,7 @@ int main(int argc, const char * argv[])
     
     cout << "Rendering...\n";
 
-    tracer.Render(parsedModel, modelLength, light, 4, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
     
     cout << "Done\n";
    

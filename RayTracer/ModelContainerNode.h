@@ -24,6 +24,8 @@ public:
     
     /// Determines if any part of the given triangle object intersects any part of the area defined by the bounding box
     bool Intersects(BoundingBox boundingBox, Triangle object);
+    
+    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties) = 0;
 };
 
 #endif

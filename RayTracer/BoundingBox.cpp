@@ -191,6 +191,122 @@ double BoundingBox::SurfaceArea()
     return 2 * (diagonal.x * diagonal.y + diagonal.y * diagonal.z + diagonal.x * diagonal.z);
 }
 
+bool BoundingBox::TryGetIntersectionAtSurface(Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectAtSurface)
+{
+    struct IntersectScaleFactor
+    {
+        PartitionPlaneType partitionPlane;
+        PartitionKeepDirection side;
+    };
+   
+    IntersectScaleFactor scaleFactors[6];
+    
+    scaleFactors[0] = IntersectScaleFactor { PartitionPlaneType::X, PartitionKeepDirection::Positive };
+    scaleFactors[1] = IntersectScaleFactor { PartitionPlaneType::X, PartitionKeepDirection::Negative };
+    scaleFactors[2] = IntersectScaleFactor { PartitionPlaneType::Y, PartitionKeepDirection::Positive };
+    scaleFactors[3] = IntersectScaleFactor { PartitionPlaneType::Y, PartitionKeepDirection::Negative };
+    scaleFactors[4] = IntersectScaleFactor { PartitionPlaneType::Z, PartitionKeepDirection::Positive };
+    scaleFactors[5] = IntersectScaleFactor { PartitionPlaneType::Z, PartitionKeepDirection::Negative };
+
+    Vector3D closestIntersect;
+    Vector3D originToClosestIntersect;
+    bool haveFoundAnIntersect = false;
+    
+    for (int i = 0; i < 6; i++)
+    {
+        Vector3D outIntersectPosition;
+        Vector3D originToIntersect = rayOrigin.PointToPoint(outIntersectPosition);
+        
+        if (this->TryGetIntersectionAtSurface(ray, rayOrigin, scaleFactors[i].partitionPlane, scaleFactors[i].side, &outIntersectPosition))
+        {
+            if (!haveFoundAnIntersect || originToClosestIntersect.GetMagnitude() > originToIntersect.GetMagnitude())
+            {
+                haveFoundAnIntersect = true;
+                closestIntersect = outIntersectPosition;
+                originToClosestIntersect = rayOrigin.PointToPoint(closestIntersect);
+            }
+        }
+    }
+
+    if (haveFoundAnIntersect)
+    {
+        *outIntersectAtSurface = closestIntersect;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool BoundingBox::TryGetIntersectionAtSurface(Vector3D ray, Vector3D rayOrigin, PartitionPlaneType plane, PartitionKeepDirection side, Vector3D* outIntersectAtSurface)
+{
+    Vector3D originToRelevantVertex;
+    Vector3D localIntersectAtSurface;
+    
+    if (side == PartitionKeepDirection::Positive)
+    {
+        originToRelevantVertex = rayOrigin.PointToPoint(this->max);
+    }
+    else
+    {
+        originToRelevantVertex = rayOrigin.PointToPoint(this->min);
+    }
+    
+    double scaleFactor;
+    Vector3D planeIntersect;
+    bool hasIntersect = false;
+    
+    if (plane == PartitionPlaneType::X)
+    {
+        scaleFactor = originToRelevantVertex.x / ray.x;
+    }
+    else if (plane == PartitionPlaneType::Y)
+    {
+        scaleFactor = originToRelevantVertex.y / ray.y;
+    }
+    else
+    {
+        scaleFactor = originToRelevantVertex.z / ray.z;
+    }
+    
+    // Slight redundancy in plane detection logic here, to speed up the return of the scale factor is negative
+    if (!isnan(scaleFactor) && scaleFactor > 0.0)
+    {
+        planeIntersect = rayOrigin.Add(ray.Scale(scaleFactor));
+        localIntersectAtSurface = planeIntersect;
+
+        if (plane == PartitionPlaneType::X)
+        {
+            hasIntersect = planeIntersect.y >= this->min.y &&
+                            planeIntersect.y <= this->max.y &&
+                            planeIntersect.z >= this->min.z &&
+                            planeIntersect.z <= this->max.z;
+        }
+        else if (plane == PartitionPlaneType::Y)
+        {
+            hasIntersect = planeIntersect.x >= this->min.x &&
+                            planeIntersect.x <= this->max.x &&
+                            planeIntersect.z >= this->min.z &&
+                            planeIntersect.z <= this->max.z;
+        }
+        else
+        {
+            hasIntersect = planeIntersect.x >= this->min.x &&
+                            planeIntersect.x <= this->max.x &&
+                            planeIntersect.y >= this->min.y &&
+                            planeIntersect.y <= this->max.y;
+        }
+        
+        if (hasIntersect)
+        {
+            *outIntersectAtSurface = localIntersectAtSurface;
+        }
+    }
+    
+    return hasIntersect;
+}
+
 PartitionPlaneType BoundingBox::GetLongestEdge()
 {
     Vector3D diagonal = this->min.PointToPoint(this->max);

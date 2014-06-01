@@ -19,6 +19,7 @@
 #include "TransformationMatrix.h"
 #include "ModelObject.h"
 #include "IntersectProperties.h"
+#include "ModelContainer.h"
 
 struct ProgressParams
 {
@@ -28,8 +29,7 @@ struct ProgressParams
 
 struct TraceRayParams
 {
-    ModelObject** model;
-    int modelLength;
+    ModelContainer modelContainer;
     LightSource* lightSources;
     int lightSourceLength;
     int reflectionDepth;
@@ -48,7 +48,7 @@ public:
     Tracer();
     ~Tracer();
     /// Performs the actual render of the output buffer
-    OutputRasterizer Render(ModelObject** model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan);
+    OutputRasterizer Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan);
 private:
     static void* PrintProgress(void* printProgressParams);
     
@@ -56,13 +56,10 @@ private:
     static void* TraceRayThread(void* traceRayParams);
 
     /// Traces a single ray in the model and gets the output colour
-    static Colour TraceRay(ModelObject **model, int modelLength, int ignoreModelAtIndex, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
+    static Colour TraceRay(ModelContainer modelContainer, ModelObject* ignoredModel, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
     
     /// Traces a single ray in the model and gets the output colour
-    static Colour TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
-    
-    /// Does the same thing ProcessSingleRay does, but applies to the entire model rather than to a single triangle
-    static bool ProcessSingleRayInModel(ModelObject** model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, int* outInteresectObjectIndex, IntersectProperties* outIntersectProperties);
+    static Colour TraceRay(ModelContainer modelContainer, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections);
     
     /// For a given reflected ray, gets a list of diffuse rays to sample
     static Vector3D* GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOrigin, int sampleCount, double diffuseness);

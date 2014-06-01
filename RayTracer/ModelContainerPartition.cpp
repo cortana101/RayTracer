@@ -74,3 +74,51 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
     
     return this;
 }
+
+bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
+{
+    double raySearchPositionInPartitionPlane = 0.0;
+    
+    if (this->partitionPlane == PartitionPlaneType::X)
+    {
+        raySearchPositionInPartitionPlane = raySearchPosition.x;
+    }
+    else if (this->partitionPlane == PartitionPlaneType::Y)
+    {
+        raySearchPositionInPartitionPlane = raySearchPosition.y;
+    }
+    else
+    {
+        raySearchPositionInPartitionPlane = raySearchPosition.z;
+    }
+    
+    bool foundHitInChild = false;
+    
+    BoundingBox posChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Positive);
+    BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
+    
+    Vector3D newRaySearchPosition;
+    
+    if (raySearchPositionInPartitionPlane > this->partitionPosition)
+    {
+        foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, raySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        
+        // See if the ray intersects the positive side of negChild's bounding box
+        if (!foundHitInChild && negChildBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, this->partitionPlane, PartitionKeepDirection::Positive, &newRaySearchPosition))
+        {
+            foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, newRaySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        }
+    }
+    else
+    {
+        foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, raySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        
+        // See if the ray intersects the negative side of posChild's bounding box
+        if (!foundHitInChild && posChildBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, this->partitionPlane, PartitionKeepDirection::Negative, &newRaySearchPosition))
+        {
+            foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, newRaySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        }
+    }
+    
+    return foundHitInChild;
+}

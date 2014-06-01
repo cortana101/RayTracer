@@ -33,3 +33,21 @@ void ModelContainer::AddItem(Triangle *newObject)
         throw "Something is wrong with expansion of our global bounding box, the root should always fully contain any shape we add to the model";
     }
 }
+
+bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelObject* ignoredObject, ModelObject **outIntersectedModel, IntersectProperties* outIntersectProperties)
+{
+    Vector3D initialRaySearchPosition;
+    bool rayHitsGlobalBoundingBox = false;
+    
+    if (this->globalBoundingBox.Contains(rayOrigin))
+    {
+        initialRaySearchPosition = rayOrigin;
+        rayHitsGlobalBoundingBox = true;
+    }
+    else
+    {
+        rayHitsGlobalBoundingBox = this->globalBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
+    }
+    
+    return this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+}

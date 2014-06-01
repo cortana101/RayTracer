@@ -192,3 +192,24 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
         return false;
     }
 }
+
+bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
+{
+    IntersectProperties localIntersectProperties;
+    bool hasIntersect = false;
+    
+    for (int i = 0; i < this->objectCount; i++)
+    {
+        if (this->objects[i] != ignoredObject && this->objects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
+        {
+            if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
+            {
+                hasIntersect = true;
+                *outIntersectProperties = localIntersectProperties;
+                *outIntersectedModel = this->objects[i];
+            }
+        }
+    }
+    
+    return hasIntersect;
+}

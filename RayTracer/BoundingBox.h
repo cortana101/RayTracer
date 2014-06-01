@@ -13,6 +13,7 @@
 #include "Vector3D.h"
 #include "PartitionPlaneEnums.h"
 #include "Triangle.h"
+#include <math.h>
 
 /// Describes an axis-aligned bounding box in 3D space
 class BoundingBox
@@ -37,6 +38,14 @@ public:
     
     /// Determines if the current bounding box fully contains the given triangle
     bool Contains(Triangle triangle);
+    
+    /// Gets a point on all the surfaces of this bounding box that represents the intersection of the provided ray
+    /// and the current bounding box which is closest to the ray origin.
+    /// Returns false if there are no intersects
+    bool TryGetIntersectionAtSurface(Vector3D ray, Vector3D rayOrigin, Vector3D* outIntersectAtSurface);
+    
+    /// Gets a point on a specific surface of this bounding box that is intersected by the provided ray
+    bool TryGetIntersectionAtSurface(Vector3D ray, Vector3D rayOrigin, PartitionPlaneType plane, PartitionKeepDirection side, Vector3D* outIntersectAtSurface);
     
     /// Gets the surface area of this bounding box
     double SurfaceArea();

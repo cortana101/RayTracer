@@ -26,7 +26,7 @@ Tracer::~Tracer()
     // Do nothing
 }
 
-OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
+OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
 {
     OutputRasterizer output (xSpan, ySpan);
    
@@ -68,8 +68,8 @@ OutputRasterizer Tracer::Render(ModelObject **model, int modelLength, LightSourc
     for(int i = 0; i < NUMCONCURRENTTHREADS; i++)
     {
         TraceRayParams parameters;
-        parameters.model = model;
-        parameters.modelLength = modelLength;
+        parameters.modelContainer = modelContainer;
+//        parameters.modelLength = modelLength;
         parameters.lightSources = lightSources;
         parameters.lightSourceLength = lightSourceLength;
         parameters.reflectionDepth = 4;
@@ -143,8 +143,7 @@ void* Tracer::TraceRayThread(void* traceRayParams)
         Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
         Vector3D origin = Vector3D(0.0, 0.0, 0.0);
     
-        Colour outputColour = TraceRay(traceRayParameters->model,
-                                       traceRayParameters->modelLength,
+        Colour outputColour = TraceRay(traceRayParameters->modelContainer,
                                        traceRayParameters->lightSources,
                                        traceRayParameters->lightSourceLength,
                                        ray,
@@ -157,20 +156,19 @@ void* Tracer::TraceRayThread(void* traceRayParams)
     pthread_exit(NULL);
 }
 
-Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtIndex, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
+Colour Tracer::TraceRay(ModelContainer modelContainer, ModelObject* ignoredModel, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
 {
     IntersectProperties intersectProperties;
-    int outIntersectedModelIndex;
+    ModelObject* outIntersectedObject;
+    //int outIntersectedModelIndex;
     
-    // pass -1 to ignore model at index to get everything
-    bool hasIntersect = ProcessSingleRayInModel(model, modelLength, ignoreModelAtIndex, ray, rayOrigin, &outIntersectedModelIndex, &intersectProperties);
+    // pass NULL to the ignored model in order to include everything
+    bool hasIntersect = modelContainer.TryGetIntersection(ray, rayOrigin, NULL, &outIntersectedObject, &intersectProperties);
     
     Colour output = Colour(0, 0, 0);
     
     if(hasIntersect)
     {
-        ModelObject* intersectedObject = model[outIntersectedModelIndex];
-        
         for (int i = 0; i < lightSourceLength; i++)
         {
             Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position).ToUnitVector();
@@ -178,12 +176,13 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtI
             // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
             // light source is blocked or not
             IntersectProperties lightIntersectProperties;
-            int lightIntersectedModelIndex;
+            ModelObject* lightIntersectedObject;
+            //int lightIntersectedModelIndex;
             
             // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
             // If the dot product of the normal and the path to the light is negative, it means the path to the light is behind the reflecting object, thus
             // light cannot possibly reach and we dont have to consider this particular light for this intersection
-            if (!ProcessSingleRayInModel(model, modelLength, outIntersectedModelIndex, intersectToLight, intersectProperties.intersectPosition, &lightIntersectedModelIndex, &lightIntersectProperties))
+            if (!modelContainer.TryGetIntersection(intersectToLight, intersectProperties.intersectPosition, outIntersectedObject, &lightIntersectedObject, &lightIntersectProperties))
             {
                 // We should use lambertian and phong shading models here
                 
@@ -193,7 +192,7 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtI
                 
                 if (reflectRayDotLight > 0.0)
                 {
-                    phongContributionFactor = pow(intersectProperties.normalizedReflection.DotProduct(intersectToLight), intersectedObject->gloss) * PHONGCONSTANT;
+                    phongContributionFactor = pow(intersectProperties.normalizedReflection.DotProduct(intersectToLight), outIntersectedObject->gloss) * PHONGCONSTANT;
                 }
                 
                 if (lambertianContributionFactor < 0.0)
@@ -201,9 +200,9 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtI
                     lambertianContributionFactor = 0.0;
                 }
                 
-                Colour lambertianColour = intersectedObject->colour.Scale(lambertianContributionFactor * lightSources[i].intensity);
+                Colour lambertianColour = outIntersectedObject->colour.Scale(lambertianContributionFactor * lightSources[i].intensity);
                 
-                Colour phongColour = intersectedObject->colour.Scale(phongContributionFactor * lightSources[i].intensity);
+                Colour phongColour = outIntersectedObject->colour.Scale(phongContributionFactor * lightSources[i].intensity);
                 
                 output = output.Add(lambertianColour.Add(phongColour));
             }
@@ -214,11 +213,11 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtI
         if (reflections >= 0)
         {
             Vector3D* diffuseRays = GenerateDiffuseRays(intersectProperties.normalizedReflection, intersectProperties.intersectPosition, 1, 0.9);
-            Colour reflectionColour = TraceRay(model, modelLength, outIntersectedModelIndex, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
+            Colour reflectionColour = TraceRay(modelContainer, outIntersectedObject, lightSources, lightSourceLength, intersectProperties.normalizedReflection, intersectProperties.intersectPosition, reflections);
             reflectionColour = reflectionColour.Scale(REFLECTIVELOSS);
             
             // Add after multiple to take into account the surface's reflectivity for each colour
-            output = output.Add(intersectedObject->colour.Multiply(reflectionColour));
+            output = output.Add(outIntersectedObject->colour.Multiply(reflectionColour));
         }
     }
     else
@@ -229,34 +228,10 @@ Colour Tracer::TraceRay(ModelObject **model, int modelLength, int ignoreModelAtI
     return output;
 }
 
-Colour Tracer::TraceRay(ModelObject **model, int modelLength, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
+Colour Tracer::TraceRay(ModelContainer modelContainer, LightSource *lightSources, int lightSourceLength, Vector3D ray, Vector3D rayOrigin, int reflections)
 {
-    // Pass -1 to ignore model at index, ie by default we dont ignore anything
-    return TraceRay(model, modelLength, -1, lightSources, lightSourceLength, ray, rayOrigin, reflections);
-}
-
-bool Tracer::ProcessSingleRayInModel(ModelObject **model, int modelLength, int ignoreModelAtIndex, Vector3D ray, Vector3D rayOrigin, int *outIntersectedObjectIndex, IntersectProperties* outIntersectProperties)
-{
-    bool hasIntersect = false;
-    int modelIterator = 0;
-    IntersectProperties localIntersectProperties;
-    
-    while (modelIterator < modelLength)
-    {
-        if (modelIterator != ignoreModelAtIndex && model[modelIterator]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
-        {
-            if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
-            {
-                hasIntersect = true;
-                *outIntersectProperties = localIntersectProperties;
-                *outIntersectedObjectIndex = modelIterator;
-            }
-        }
-        
-        modelIterator++;
-    }
-    
-    return hasIntersect;
+    // Pass NULL to the ignored model, ie by default we dont ignore anything
+    return TraceRay(modelContainer, NULL, lightSources, lightSourceLength, ray, rayOrigin, reflections);
 }
 
 Vector3D* Tracer::GenerateDiffuseRays(Vector3D primaryRay, Vector3D primaryRayOrigin, int sampleCount, double diffuseness)
