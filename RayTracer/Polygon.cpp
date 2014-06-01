@@ -17,29 +17,14 @@ Polygon::Polygon(Triangle startingTriangle)
     this->startingGloss = startingTriangle.gloss;
 }
 
-Triangle* Polygon::Triangulate(int* outNumTriangles)
+Polygon::Polygon(QList<Vector3D> vertices, Colour colour, double gloss)
 {
-    *outNumTriangles = this->vertices.length() - 2;
-    
-    Triangle* output = new Triangle[*outNumTriangles];
-    
-    for (int i = 0; i < *outNumTriangles; i++)
-    {
-        Triangle outputTriangle;
-        
-        // Always start with the vertex at 0
-        outputTriangle.p1 = this->vertices.at(0);
-        outputTriangle.p2 = this->vertices.at(1 + i);
-        outputTriangle.p3 = this->vertices.at(2 + i);
-        outputTriangle.colour = this->startingColour;
-        outputTriangle.gloss = this->startingGloss;
-        output[i] = outputTriangle;
-    }
-    
-    return output;
+    this->vertices = vertices;
+    this->startingColour = colour;
+    this->startingGloss = gloss;
 }
 
-void Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionKeepDirection keepDirection)
+Polygon Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionKeepDirection keepDirection)
 {
     // If we have a convex polygon, which is guaranteed with this class, and we clip the polygon along a plane
     // then by definition only a contiguous set of vertices may be clipped, ie its not possible for a disjoint
@@ -98,8 +83,43 @@ void Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionKeep
         }
     }
  
-    // Overwrite our verticies with the clipped keepers
-    this->vertices = keepers;
+    return Polygon(keepers);
+}
+
+Polygon Polygon::Clip(BoundingBox boundingBox)
+{
+    int clippedVertexCount = 0;
+    
+    Polygon clippedPolygon = this->Clip(PartitionPlaneType::X, boundingBox.max.x, PartitionKeepDirection::Negative);
+    clippedPolygon = clippedPolygon.Clip(PartitionPlaneType::Y, boundingBox.max.y, PartitionKeepDirection::Negative);
+    clippedPolygon = clippedPolygon.Clip(PartitionPlaneType::Z, boundingBox.max.z, PartitionKeepDirection::Negative);
+    clippedPolygon = clippedPolygon.Clip(PartitionPlaneType::X, boundingBox.min.x, PartitionKeepDirection::Positive);
+    clippedPolygon = clippedPolygon.Clip(PartitionPlaneType::Y, boundingBox.min.y, PartitionKeepDirection::Positive);
+    clippedPolygon = clippedPolygon.Clip(PartitionPlaneType::Z, boundingBox.min.z, PartitionKeepDirection::Positive);
+    return clippedPolygon;
+}
+
+double Polygon::SurfaceArea()
+{
+    int numTriangles = this->vertices.length() - 2;
+    
+    // Its possible after clipping we end up with no vertices left to form triangles, in which case the polygon just gets clipped out of existence
+    if (numTriangles < 1)
+    {
+        return 0.0;
+    }
+    
+    double surfaceArea = 0.0;
+   
+    for (int i = 0; i < numTriangles; i++)
+    {
+        // Always start with the vertex at 0
+        Triangle triangle (this->vertices.at(0), this->vertices.at(1 + i), this->vertices.at(2 + i));
+        
+        surfaceArea += triangle.SurfaceArea();
+    }
+    
+    return surfaceArea;
 }
 
 Vector3D Polygon::FindIntersectingVertex(PartitionPlaneType plane, double planePosition, Vector3D vertex1, Vector3D vertex2)

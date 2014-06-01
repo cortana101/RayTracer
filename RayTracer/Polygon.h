@@ -14,6 +14,7 @@
 #include "Vector3D.h"
 #include "Triangle.h"
 #include "PartitionPlaneEnums.h"
+#include "BoundingBox.h"
 
 /// Contains a polygon of 3 or more vertices that lie on the same plane
 /// Mainly used for clipping operations and getting the resulting triangles
@@ -21,10 +22,15 @@ class Polygon
 {
 public:
     Polygon(Triangle startingTriangle);
-    Triangle* Triangulate(int* outNumTriangles);
+    Polygon(QList<Vector3D> vertices, Colour color = Colour(0.0, 0.0, 0.0), double gloss = 0.0);
     
     /// Clips the current polygon along the provided plane
-    void Clip(PartitionPlaneType plane, double planePosition, PartitionKeepDirection keepDirection);
+    Polygon Clip(PartitionPlaneType plane, double planePosition, PartitionKeepDirection keepDirection);
+
+    /// Clips the current polygon to the bounds of the bounding box
+    Polygon Clip(BoundingBox boundingBox);
+    
+    double SurfaceArea();
     
 private:
     Colour startingColour;

@@ -45,7 +45,8 @@ double Vector3D::GetMagnitude()
 
 double Vector3D::GetAngle(Vector3D v2)
 {
-    return acos(DotProduct(v2) / (GetMagnitude() * v2.GetMagnitude()));
+    double angle = acos(DotProduct(v2) / (GetMagnitude() * v2.GetMagnitude()));
+    return isnan(angle) ? 0.0 : angle;
 }
 
 Vector3D Vector3D::ToUnitVector()

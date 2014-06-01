@@ -8,40 +8,69 @@
 
 #include "ModelContainerPartition.h"
 
-bool ModelContainerPartition::AddItem(ModelObject *object)
+ModelContainerPartition::ModelContainerPartition()
 {
-    /// Add an item to the current node recursively, if we added an item successfull we return true
-    /// otherwise we return false
+    // Do nothing
+}
+
+ModelContainerPartition::~ModelContainerPartition()
+{
+    // Do nothing
+}
+
+ModelContainerNode* ModelContainerPartition::AddItem(Triangle *object, BoundingBox boundingBox)
+{
+    BoundingBox posChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Positive);
+    BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
     
-    // Get the nominal position for the purposes of finding which leaf node to go into first
-    // then if the object is bigger than the space bounded by the leaf node, we return up the
-    // stack of nodes and recursively add it to the neighbouring nodes as necessary until we have
-    // entirely contained the object
-    Vector3D nominalPostion = object->GetNominalPosition();
-    
-    double nominalPositionInPartitionPlane = 0.0;
-    
-    if (this->partitionPlane == PartitionPlaneType::X)
+    // Recursively add the triangle to the child nodes. Note that if the triangle intersects
+    // both childs, we add a reference to it in BOTH childs
+    if (posChildBoundingBox.Intersects(*object))
     {
-        nominalPositionInPartitionPlane = nominalPostion.x;
+        this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
     }
-    else if (this->partitionPlane == PartitionPlaneType::Y)
+    
+    if (negChildBoundingBox.Intersects(*object))
     {
-        nominalPositionInPartitionPlane = nominalPostion.y;
+        this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
+    }
+    
+    return this;
+}
+
+ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode)
+{
+    // Ideally we would use a nominal position to avoid having to calculate intersects all the way down the tree
+    // calculating intersects is relatively expensive, calculating intersect using a nominal position is much cheaper
+    
+    BoundingBox posChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Positive);
+    BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
+    
+    bool fullyContainedByChild = false;
+    
+    if (posChildBoundingBox.Contains(nominalPosition))
+    {
+        this->posChild = this->posChild->AddItem(object, posChildBoundingBox, nominalPosition, &fullyContainedByChild);
+        
+        if (!fullyContainedByChild && negChildBoundingBox.Intersects(*object))
+        {
+            this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
+        }
     }
     else
     {
-        nominalPositionInPartitionPlane = nominalPostion.z;
+        this->negChild = this->negChild->AddItem(object, negChildBoundingBox, nominalPosition, &fullyContainedByChild);
+        
+        if (!fullyContainedByChild && posChildBoundingBox.Intersects(*object))
+        {
+            this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
+        }
     }
     
-    if (nominalPositionInPartitionPlane > this->partitionPosition)
+    if (!fullyContainedByChild)
     {
-        return this->posChild->AddItem(object);
-    }
-    else
-    {
-        return this->negChild->AddItem(object);
+        *outFullyContainedByNode = boundingBox.Contains(*object);
     }
     
-    return false;
+    return this;
 }

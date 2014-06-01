@@ -18,7 +18,9 @@
 #include "LightSource.h"
 #include "Sphere.h"
 #include "PlyFileParser.h"
+#include "ModelContainer.h"
 
+#include "BoundingBox.h"
 #include "Polygon.h"
 
 // Standard 4:3 format
@@ -44,30 +46,18 @@ OutputRasterizer* writeSample();
 int main(int argc, const char * argv[])
 {
     int modelLength;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
-    /*  Quick and dirty polygon clipping test
-     
-    Triangle* testModel = new Triangle();
-    testModel->p1 = Vector3D(0.0, 0.0, 2.0);
-    testModel->p2 = Vector3D(1.0, 1.0, 3.0);
-    testModel->p3 = Vector3D(2.0, 0.0, 4.0);
-    testModel->colour = Colour(200, 200, 200);
-    testModel->gloss = 200.0;
+    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTrianglesLarge.ply", &modelLength);
+    ModelContainer modelContainer;
     
-    Polygon testPolygon = Polygon(*testModel);
-    testPolygon.Clip(PartitionPlaneType::X, 1.5, PartitionKeepDirection::Negative);
-    testPolygon.Clip(PartitionPlaneType::Y, 0.9, PartitionKeepDirection::Negative);
-    testPolygon.Clip(PartitionPlaneType::X, 0.3, PartitionKeepDirection::Positive);
-    testPolygon.Clip(PartitionPlaneType::Z, 3.0, PartitionKeepDirection::Negative);
-    
-    int numTriangles;
-    Triangle* triangles = testPolygon.Triangulate(&numTriangles);
-    
-    ModelObject* staticModel[numTriangles];
-    for (int i = 0; i < numTriangles; i++)
+    for (int i = 0; i < modelLength; i++)
     {
-        staticModel[i] = &triangles[i];
-    }*/
+        Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
+        
+        if (model != NULL)
+        {
+            modelContainer.AddItem(model);
+        }
+    }
     
     // Make a light source directly overhead
     LightSource light[4];

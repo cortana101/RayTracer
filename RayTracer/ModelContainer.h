@@ -12,6 +12,7 @@
 #include <iostream>
 #include "ModelObject.h"
 #include "ModelContainerNode.h"
+#include "ModelContainerLeaf.h"
 
 #define MAXMODELPERNODE 6
 
@@ -22,7 +23,11 @@ public:
     ModelContainer();
     ~ModelContainer();
     ModelContainerNode* root;
+    void AddItem(Triangle *newObject);
     //bool TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelObject* outIntersectedModel, int* outIntersectedModelIndex);
+private:
+    // Describes the bounding box for everything in the model, starts as an empty box since nothing is in the model until we add stuff
+    BoundingBox globalBoundingBox = BoundingBox(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));;
 };
 
 #endif /* defined(__RayTracer__ModelContainer__) */

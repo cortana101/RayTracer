@@ -31,7 +31,9 @@ public:
     /// The child on the negative side of the partition plane
     ModelContainerNode* negChild;
     
-    virtual bool AddItem(ModelObject* object);
+    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
+    
+    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
     
     // We must also remember the model object index as it stands in the original model object array so we can do our reflection ignore logic
 };

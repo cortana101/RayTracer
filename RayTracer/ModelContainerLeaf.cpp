@@ -8,39 +8,187 @@
 
 #include "ModelContainerLeaf.h"
 
-bool ModelContainerLeaf::AddItem(ModelObject *object)
+// The computational cost of calculating an intersect
+#define COSTOFINTERSECT 50
+
+// The computational cost of calculating traversing 1 more node
+#define COSTOFTRAVERSAL 10
+
+// The threshold of evenness when we are searching for a potential split location
+#define SPLITTHRESHOLD 0.6
+
+#define WEIGHTEDCHANCETHRESHOLD 0.0001
+
+// The max number of attempts to try to split a node such that it satisfies the split threshold
+// if after this many attempts we still cant get to the threshold, just take the split as is
+#define MAXSPLITATTEMPTS 4
+
+#define MINOBJECTSBEFORECONSIDERINGSPLIT 3
+
+ModelContainerLeaf::ModelContainerLeaf()
 {
-    // If our current list of items is < max number of items, then add it
-    // to the current list
-    // If we've maxed out our list of items then split this current node and recurse
+    // Do nothing
+}
+
+ModelContainerLeaf::~ModelContainerLeaf()
+{
+    // Do nothing
+}
+
+ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
+{
+    PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
+    PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
+    planes[0] = longestEdge;
     
-    // After insertion AT THE LEAF NODE, do a bound test to see if the current leaf
-    // can completely contain the model, if yes, return success. Otherwise
-    // go up the stack and keep inserting the model into neighbours until we've
-    // totally contained the model object
+    // Ideally we should split on the longest edge if possible so we dont end up with long thin rectangles, so we try the longest edge first
+    if (longestEdge == PartitionPlaneType::Y)
+    {
+        planes[1] = PartitionPlaneType::X;
+    }
+    else if (longestEdge == PartitionPlaneType::Z)
+    {
+        planes[2] = PartitionPlaneType::X;
+    }
     
+    double candidateSplitPosition;
     
-    // Check the one note for details on the implementation
-    // The only real missing piece is how to determine the split, we should use SAH
-    // For SAH to work we need to be able to clip triangles that are not bounded entirely
-    // by the current bounding box, in that case, apply sutherland-hodgman on the triangle,
-    // and clip it by all 6 faces of the bounding box, the resulting area is the area we're
-    // working with.
-    // One key difference with other kd trees is that we wont be storing the clipped triangles
-    // in our model. In theory with Sutherland-Hodgman every clip operation can result in 2x triangles
-    // which in theory could result in 2^6 triangles as output, we dont want to have to store that
-    // it suffices for us to store the original triangle, even as it is more than the bounding volume
-    // but when we calculate SAH we can clip the triangle for that purpose and determine the split line.
+    if(this->objectCount > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    {
+        double currentCost = this->GetCost(*newObject, boundingBox);
+        
+        for (int i = 0; i < 3; i++)
+        {
+            if (this->TryGetPotentialSplitPosition(planes[i], *newObject, boundingBox, currentCost, &candidateSplitPosition))
+            {
+                ModelContainerLeaf* posChild = new ModelContainerLeaf();
+                ModelContainerLeaf* negChild = new ModelContainerLeaf();
+                
+                ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
+                newPartitionNode->partitionPlane = planes[i];
+                newPartitionNode->partitionPosition = candidateSplitPosition;
+                newPartitionNode->posChild = posChild;
+                newPartitionNode->negChild = negChild;
+                
+                // Add everything in the current node to the new node, which will decide which child to put the each object into
+                for (int i = 0; i < this->objectCount; i++)
+                {
+                    newPartitionNode->AddItem(this->objects[i], boundingBox);
+                }
+                
+                newPartitionNode->AddItem(newObject, boundingBox);
+                
+                // After we add everything to the new node, we can delete the current node, because it is being replaced by the new partition node
+                delete this;
+                
+                return newPartitionNode;
+            }
+        }
+    }
     
-    // Sutherland-Hodges in 3d:
-        // 1. Put all vertices of polygon in list (doesnt have to be just triangle, could be any polygon)
-        // 2. For a given split plane, determine which vertices are on the cut-side of the plane
-        // 3. For each cut vertex, find the intersect via ProcessRay for a ray that originates from that vertex, and goes to its neighbouring vertex
-        // 4. Since the polygon is convex, any cut should only result in 2 intersecting vertices
-        // 5. those 2 intersecting vertices becomes the new edge vertices of the polygon
-        // 6. After all the plane clips have happened, we should still have a convex polygon
-        // 7. trivially generate triangles from that set of convex vertices.
-    // For the purposes of SAH, calculate the sum of the areas of these triangles
+    // Add the new object to the current node if we havent already decided to split the node
+    this->objects.append(newObject);
+    this->objectCount++;
+    return this;
+}
+
+ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode)
+{
+    // At the leaf node we dont really care about the nominal position anymore, we are now in the right place anyways
     
-    return false;
+    *outFullyContainedByNode = boundingBox.Contains(*newObject);
+    return this->AddItem(newObject, boundingBox);
+}
+
+double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
+{
+    // The cost of a leaf node is basically the cost of the number of triangles in the leaf
+    // weighed by the probability of hitting any of the triangles
+    double totalSurfaceAreaOfClippedObjects = 0.0;
+    int numberOfContainedObjects = 0;
+    
+    for (int i = 0; i < this->objectCount; i++)
+    {
+        if (boundingBox.Intersects(*this->objects[i]))
+        {
+            totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i], boundingBox);
+            numberOfContainedObjects++;
+        }
+    }
+    
+    if (boundingBox.Intersects(newObject))
+    {
+        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(newObject, boundingBox);
+        numberOfContainedObjects++;
+    }
+    
+    // Weigh the chances of hitting one of the objects given the fact that we've already hit the bounding box
+    double weightedChancesOfHit = totalSurfaceAreaOfClippedObjects / boundingBox.SurfaceArea();
+
+    if (weightedChancesOfHit < WEIGHTEDCHANCETHRESHOLD)
+    {
+        weightedChancesOfHit = WEIGHTEDCHANCETHRESHOLD;
+    }
+    
+    return COSTOFTRAVERSAL + numberOfContainedObjects * COSTOFINTERSECT / weightedChancesOfHit;
+}
+
+double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox)
+{
+    Polygon objectPolygon = Polygon(object);
+    return objectPolygon.Clip(boundingBox).SurfaceArea();
+}
+
+bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition)
+{
+    // Binary search the best potential split position until we reach a certain threshold
+    double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
+    double candidateSplitPosition = currentBoundingBox.GetMinInAxis(candidatePlane) + searchLength;
+    
+    BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
+    BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+    
+    double posCost = this->GetCost(newObject, posBound);
+    double negCost = this->GetCost(newObject, negBound);
+    
+    int splitAttempts = 0;
+    
+    while ((posCost > negCost ? negCost / posCost : posCost / negCost) < SPLITTHRESHOLD && splitAttempts < MAXSPLITATTEMPTS)
+    {
+        // Do a binary search
+        searchLength /= 2;
+        
+        if (posCost > negCost)
+        {
+            candidateSplitPosition += searchLength;
+        }
+        else
+        {
+            candidateSplitPosition -= searchLength;
+        }
+        
+        posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
+        negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+        
+        posCost = this->GetCost(newObject, posBound);
+        negCost = this->GetCost(newObject, negBound);
+        
+        splitAttempts++;
+    }
+
+    double currentBoundingboxSurfaceArea = currentBoundingBox.SurfaceArea();
+   
+    // This is the total cost of doing a split
+    double splitCost = COSTOFTRAVERSAL + posBound.SurfaceArea() * posCost / currentBoundingboxSurfaceArea + negBound.SurfaceArea() * negCost / currentBoundingboxSurfaceArea;
+
+    // If its cheaper not to split, then we shouldnt split
+    if (splitCost < noSplitCost)
+    {
+        *outCandidateSplitPosition = candidateSplitPosition;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }

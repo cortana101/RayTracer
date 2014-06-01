@@ -5,8 +5,8 @@ triangleWidth = 1.0
 
 triangleFaceFormat = "3 {0} {1} {2}\n"
 
-numTriX = 5
-numTriY = 5
+numTriX = 10
+numTriY = 10
 numTriZ = 10
 startingZ = 4.0
 triSpacing = 2.0

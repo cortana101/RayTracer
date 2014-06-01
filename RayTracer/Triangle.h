@@ -20,9 +20,22 @@ class Triangle : public ModelObject
 {
 public:
     Triangle();
+    Triangle(Vector3D p1, Vector3D p2, Vector3D p3, Colour colour = Colour(0.0, 0.0, 0.0), double gloss = 0.0);
     ~Triangle();
     Triangle TranslateBy(Vector3D movement);
     virtual bool ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties* outIntersectProperties);
+    
+    // Gets a random nominal position for this triangle
+    Vector3D GetNominalPosition();
+    
+    /// Determines if the current triangle intersects with the other triangle
+    bool IntersectsWith(Triangle otherTriangle);
+    
+    /// Determines if the current triangle intersects with the edge defined by the 2 endpoints v1 and v2
+    bool IntersectsWithEdge(Vector3D v1, Vector3D v2);
+    
+    // Gets the surface area of this triangle
+    double SurfaceArea();
     
     Vector3D p1;
     Vector3D p2;
