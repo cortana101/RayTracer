@@ -36,9 +36,8 @@ OutputRasterizer* writeSample();
 //      Diffuse light source
 //      Refraction
 //      Transparency
-//      Read ply files
 //      Model partitioning data structure
-//      Anti-aliasing
+//      Adaptive Anti-aliasing (only do super sampling near edges)
 // Stretch goals:
 //      Post-render effects (e.g particles)
 //      Volumetric fog
@@ -75,7 +74,7 @@ int main(int argc, const char * argv[])
     
     cout << "Rendering...\n";
 
-    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE).WriteToFile("out.ppm");
+    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, true).WriteToFile("out.ppm");
     
     cout << "Done\n";
    

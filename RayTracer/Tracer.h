@@ -39,6 +39,7 @@ struct TraceRayParams
     int xSpan;
     int ySpan;
     int viewAngleX;
+    bool useAA;
     pthread_mutex_t pixelProgressMutex;
 };
 
@@ -48,7 +49,7 @@ public:
     Tracer();
     ~Tracer();
     /// Performs the actual render of the output buffer
-    OutputRasterizer Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan);
+    OutputRasterizer Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan, bool useAA = false);
 private:
     static void* PrintProgress(void* printProgressParams);
     

@@ -26,7 +26,7 @@ Tracer::~Tracer()
     // Do nothing
 }
 
-OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan)
+OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan, bool useAA)
 {
     OutputRasterizer output (xSpan, ySpan);
    
@@ -69,7 +69,6 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
     {
         TraceRayParams parameters;
         parameters.modelContainer = modelContainer;
-//        parameters.modelLength = modelLength;
         parameters.lightSources = lightSources;
         parameters.lightSourceLength = lightSourceLength;
         parameters.reflectionDepth = 4;
@@ -78,6 +77,7 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
         parameters.xSpan = xSpan;
         parameters.ySpan = ySpan;
         parameters.viewAngleX = viewAngleX;
+        parameters.useAA = useAA;
         parameters.pixelProgressMutex = pixelProgressMutex;
         
         void *(*TraceRayFunction)(void*);
@@ -139,17 +139,64 @@ void* Tracer::TraceRayThread(void* traceRayParams)
         
         int currentXPos = currentPixel / traceRayParameters->ySpan;
         int currentYPos = currentPixel - currentXPos * traceRayParameters->ySpan;
-    
-        Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
-        Vector3D origin = Vector3D(0.0, 0.0, 0.0);
-    
-        Colour outputColour = TraceRay(traceRayParameters->modelContainer,
-                                       traceRayParameters->lightSources,
-                                       traceRayParameters->lightSourceLength,
-                                       ray,
-                                       origin,
-                                       traceRayParameters->reflectionDepth);
-    
+        
+        Colour outputColour;
+        
+        if (!traceRayParameters->useAA)
+        {
+            Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
+            Vector3D origin = Vector3D(0.0, 0.0, 0.0);
+        
+            outputColour = TraceRay(traceRayParameters->modelContainer,
+                                           traceRayParameters->lightSources,
+                                           traceRayParameters->lightSourceLength,
+                                           ray,
+                                           origin,
+                                           traceRayParameters->reflectionDepth);
+        }
+        else
+        {
+            projectionUtils::AARayBundle rays = projectionUtils::GetProjectionWithAA(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
+            Vector3D origin = Vector3D(0.0, 0.0, 0.0);
+            
+            outputColour = TraceRay(traceRayParameters->modelContainer,
+                                           traceRayParameters->lightSources,
+                                           traceRayParameters->lightSourceLength,
+                                           rays.v1,
+                                           origin,
+                                           traceRayParameters->reflectionDepth);
+            
+            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+                                            traceRayParameters->lightSources,
+                                            traceRayParameters->lightSourceLength,
+                                            rays.v2,
+                                            origin,
+                                            traceRayParameters->reflectionDepth));
+            
+            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+                                            traceRayParameters->lightSources,
+                                            traceRayParameters->lightSourceLength,
+                                            rays.v3,
+                                            origin,
+                                            traceRayParameters->reflectionDepth));
+            
+            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+                                            traceRayParameters->lightSources,
+                                            traceRayParameters->lightSourceLength,
+                                            rays.v4,
+                                            origin,
+                                            traceRayParameters->reflectionDepth));
+            
+            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+                                            traceRayParameters->lightSources,
+                                            traceRayParameters->lightSourceLength,
+                                            rays.v5,
+                                            origin,
+                                            traceRayParameters->reflectionDepth));
+            
+            outputColour = outputColour.Scale(1 / 5.0);
+        }
+        
         traceRayParameters->outputBuffer->SetOutput(currentXPos, currentYPos, outputColour.rVal, outputColour.gVal, outputColour.bVal);
     }
     

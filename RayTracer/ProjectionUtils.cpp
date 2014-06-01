@@ -26,6 +26,25 @@ namespace projectionUtils
         return Vector3D(-xSpanLength / 2 + xCoord * (xSpanLength / xSpan), ySpanLength / 2 - yCoord * (ySpanLength / ySpan), z);
     }
     
+    AARayBundle GetProjectionWithAA(int viewingAngleX, int xSpan, int ySpan, int xCoord, int yCoord)
+    {
+        Vector3D center = GetProjection(viewingAngleX, xSpan, ySpan, xCoord, yCoord);
+        
+        double z = 2.0;
+        double xSpanLength = z * tan(ConvertDegreesToRadians((double)viewingAngleX / 2)) * 2;
+        
+        // xSpanLength / xspan is the width per pixel, divide by 3 so we spread the rays out evenly between pixels
+        double perPixelSpan = (xSpanLength / xSpan) / 3;
+        
+        Vector3D topLeft = center.Add(Vector3D(-perPixelSpan, perPixelSpan, 0.0));
+        Vector3D topRight = center.Add(Vector3D(perPixelSpan, perPixelSpan, 0.0));
+        Vector3D bottomLeft = center.Add(Vector3D(-perPixelSpan, -perPixelSpan, 0.0));
+        Vector3D bottomRight = center.Add(Vector3D(perPixelSpan, -perPixelSpan, 0.0));
+        
+        AARayBundle rayBundle { center, topLeft, topRight, bottomLeft, bottomRight };
+        return rayBundle;
+    }
+    
     static double ConvertDegreesToRadians(double degrees)
     {
         return  (degrees / 180) * M_PI;
