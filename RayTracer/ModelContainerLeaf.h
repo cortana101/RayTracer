@@ -22,7 +22,7 @@ public:
     ModelContainerLeaf();
     ~ModelContainerLeaf();
     QList<Triangle*> objects;
-    int objectCount = 0;
+    int objectCount();
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);

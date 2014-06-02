@@ -35,6 +35,11 @@ ModelContainerLeaf::~ModelContainerLeaf()
     // Do nothing
 }
 
+int ModelContainerLeaf::objectCount()
+{
+    return this->objects.count();
+}
+
 ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
 {
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
@@ -53,7 +58,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     
     double candidateSplitPosition;
     
-    if(this->objectCount > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    if(this->objectCount() > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
         QList<Triangle*> posBoundedObjects, negBoundedObjects;
         
@@ -68,9 +73,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
                 ModelContainerLeaf* negChild = new ModelContainerLeaf();
                 
                 posChild->objects = posBoundedObjects;
-                posChild->objectCount = posBoundedObjects.count();
                 negChild->objects = negBoundedObjects;
-                negChild->objectCount = negBoundedObjects.count();
                 
                 ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
                 newPartitionNode->partitionPlane = planes[i];
@@ -88,7 +91,6 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     
     // Add the new object to the current node if we havent already decided to split the node
     this->objects.append(newObject);
-    this->objectCount++;
     return this;
 }
 
@@ -107,7 +109,7 @@ double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox,
     double totalSurfaceAreaOfClippedObjects = 0.0;
     int numberOfContainedObjects = 0;
     
-    for (int i = 0; i < this->objectCount; i++)
+    for (int i = 0; i < this->objectCount(); i++)
     {
         if (boundingBox.Intersects(*this->objects[i]))
         {
@@ -206,7 +208,7 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     IntersectProperties localIntersectProperties;
     bool hasIntersect = false;
     
-    for (int i = 0; i < this->objectCount; i++)
+    for (int i = 0; i < this->objectCount(); i++)
     {
         if (this->objects[i] != ignoredObject && this->objects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
         {

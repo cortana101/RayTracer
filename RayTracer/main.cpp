@@ -45,7 +45,7 @@ OutputRasterizer* writeSample();
 int main(int argc, const char * argv[])
 {
     int modelLength;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
+    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTrianglesLarge.ply", &modelLength);
     ModelContainer modelContainer;
     
     for (int i = 0; i < modelLength; i++)
