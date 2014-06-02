@@ -46,7 +46,17 @@ int main(int argc, const char * argv[])
 {
     int modelLength;
     ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
-    ModelContainer modelContainer (parsedModel, modelLength);
+    ModelContainer modelContainer;
+    
+    for (int i = 0; i < modelLength; i++)
+    {
+        Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
+        
+        if (model != NULL)
+        {
+            modelContainer.AddItem(model);
+        }
+    }
     
     // Make a light source directly overhead
     LightSource light[4];

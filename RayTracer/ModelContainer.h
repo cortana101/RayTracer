@@ -10,19 +10,24 @@
 #define __RayTracer__ModelContainer__
 
 #include <iostream>
-#include "Triangle.h"
+#include "ModelObject.h"
 #include "ModelContainerNode.h"
 #include "ModelContainerLeaf.h"
+
+#define MAXMODELPERNODE 6
 
 /// Basic k-d tree implementation for partitioning our model space for faster searching by rays
 class ModelContainer
 {
 public:
-    ModelContainer(ModelObject** model, int modelLength);
+    ModelContainer();
     ~ModelContainer();
     ModelContainerNode* root;
     void AddItem(Triangle *newObject);
     bool TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
+private:
+    // Describes the bounding box for everything in the model, starts as an empty box since nothing is in the model until we add stuff
+    BoundingBox globalBoundingBox = BoundingBox(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));;
 };
 
 #endif /* defined(__RayTracer__ModelContainer__) */

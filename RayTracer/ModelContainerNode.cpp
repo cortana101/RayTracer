@@ -8,16 +8,8 @@
 
 #include "ModelContainerNode.h"
 
-ModelContainerNode::ModelContainerNode(BoundingBox boundingBox) : boundingBox(boundingBox)
-{
-}
 
-ModelContainerNode::~ModelContainerNode()
+bool ModelContainerNode::Intersects(BoundingBox boundingBox, Triangle object)
 {
-    // Do nothing
-}
-
-bool ModelContainerNode::Intersects(Triangle object)
-{
-    return this->boundingBox.Intersects(object);
+    return boundingBox.Intersects(object);
 }
