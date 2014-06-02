@@ -28,9 +28,9 @@ public:
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
 private:
     /// Gets the current computational cost if we add the new object
-    double GetCost(Triangle newObject, BoundingBox boundingBox);
+    double GetCost(Triangle* newObject, BoundingBox boundingBox, QList<Triangle*> *outBoundedObjects);
     double GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox);
-    bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition);
+    bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle* newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, QList<Triangle*> *posBoundedObjects, QList<Triangle*> *negBoundedObjects);
 };
 
 #endif /* defined(__RayTracer__ModelContainerLeaf__) */

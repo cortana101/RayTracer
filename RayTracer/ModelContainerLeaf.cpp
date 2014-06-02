@@ -55,28 +55,28 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     
     if(this->objectCount > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
-        double currentCost = this->GetCost(*newObject, boundingBox);
+        QList<Triangle*> posBoundedObjects, negBoundedObjects;
+        
+        // We dont actually need to get the bounded objects for this call, just hacking it for now
+        double currentCost = this->GetCost(newObject, boundingBox, &posBoundedObjects);
         
         for (int i = 0; i < 3; i++)
         {
-            if (this->TryGetPotentialSplitPosition(planes[i], *newObject, boundingBox, currentCost, &candidateSplitPosition))
+            if (this->TryGetPotentialSplitPosition(planes[i], newObject, boundingBox, currentCost, &candidateSplitPosition, &posBoundedObjects, &negBoundedObjects))
             {
                 ModelContainerLeaf* posChild = new ModelContainerLeaf();
                 ModelContainerLeaf* negChild = new ModelContainerLeaf();
+                
+                posChild->objects = posBoundedObjects;
+                posChild->objectCount = posBoundedObjects.count();
+                negChild->objects = negBoundedObjects;
+                negChild->objectCount = negBoundedObjects.count();
                 
                 ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
                 newPartitionNode->partitionPlane = planes[i];
                 newPartitionNode->partitionPosition = candidateSplitPosition;
                 newPartitionNode->posChild = posChild;
                 newPartitionNode->negChild = negChild;
-                
-                // Add everything in the current node to the new node, which will decide which child to put the each object into
-                for (int i = 0; i < this->objectCount; i++)
-                {
-                    newPartitionNode->AddItem(this->objects[i], boundingBox);
-                }
-                
-                newPartitionNode->AddItem(newObject, boundingBox);
                 
                 // After we add everything to the new node, we can delete the current node, because it is being replaced by the new partition node
                 delete this;
@@ -100,7 +100,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, BoundingBox
     return this->AddItem(newObject, boundingBox);
 }
 
-double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
+double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox, QList<Triangle*> *outBoundedObjects)
 {
     // The cost of a leaf node is basically the cost of the number of triangles in the leaf
     // weighed by the probability of hitting any of the triangles
@@ -113,13 +113,15 @@ double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
         {
             totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i], boundingBox);
             numberOfContainedObjects++;
+            outBoundedObjects->append(this->objects[i]);
         }
     }
     
-    if (boundingBox.Intersects(newObject))
+    if (boundingBox.Intersects(*newObject))
     {
-        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(newObject, boundingBox);
+        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*newObject, boundingBox);
         numberOfContainedObjects++;
+        outBoundedObjects->append(newObject);
     }
     
     // Weigh the chances of hitting one of the objects given the fact that we've already hit the bounding box
@@ -139,7 +141,7 @@ double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox bo
     return objectPolygon.Clip(boundingBox).SurfaceArea();
 }
 
-bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition)
+bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle* newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, QList<Triangle*> *posBoundedObjects, QList<Triangle*> *negBoundedObjects)
 {
     // Binary search the best potential split position until we reach a certain threshold
     double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
@@ -148,8 +150,11 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
     BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
     BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
     
-    double posCost = this->GetCost(newObject, posBound);
-    double negCost = this->GetCost(newObject, negBound);
+    *posBoundedObjects = QList<Triangle*>();
+    *negBoundedObjects = QList<Triangle*>();
+    
+    double posCost = this->GetCost(newObject, posBound, posBoundedObjects);
+    double negCost = this->GetCost(newObject, negBound, negBoundedObjects);
     
     int splitAttempts = 0;
     
@@ -170,8 +175,11 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
         posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
         negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
         
-        posCost = this->GetCost(newObject, posBound);
-        negCost = this->GetCost(newObject, negBound);
+        *posBoundedObjects = QList<Triangle*>();
+        *negBoundedObjects = QList<Triangle*>();
+        
+        posCost = this->GetCost(newObject, posBound, posBoundedObjects);
+        negCost = this->GetCost(newObject, negBound, negBoundedObjects);
         
         splitAttempts++;
     }
