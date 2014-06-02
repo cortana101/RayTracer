@@ -94,7 +94,7 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
         double sumOfAngles = iToOne.GetAngle(iToTwo) + iToTwo.GetAngle(iToThree) + iToThree.GetAngle(iToOne);
         
         // Add a little relief angle to handle rounding errors
-        if (sumOfAngles >= (2 * M_PI - 0.000000001))
+        if (sumOfAngles >= (2 * M_PI - 0.0000000001))
         {
             outIntersectProperties->normalizedReflection = outIntersectProperties->intersectPosition.GetReflection(outIntersectProperties->normalizedNormal);
             outIntersectProperties->normalizedReflection = outIntersectProperties->normalizedReflection.ToUnitVector();

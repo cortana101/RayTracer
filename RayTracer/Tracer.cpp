@@ -219,6 +219,12 @@ Colour Tracer::TraceRay(ModelContainer modelContainer, ModelObject* ignoredModel
         for (int i = 0; i < lightSourceLength; i++)
         {
             Vector3D intersectToLight = intersectProperties.intersectPosition.PointToPoint(*lightSources[i].position).ToUnitVector();
+
+            // Add a tiny amount of distance to the origin of the intersect to light vector, this ensures that we dont get blocked by surfaces that are very close to
+            // each other, e.g sometimes triangle edges may result in a hit even though mathematically it is a pure edge.
+            // A relatively large value here is actually ok, since surfaces that obcure light sources only have significant shadow casting effects if the surface
+            // is sufficiently far away, even if we miss the small chance that there is some shadows in 2 super close surfaces, that effect is likely to be minimal anyways
+            Vector3D intersectToLightOrigin = intersectProperties.intersectPosition.Add(intersectToLight.Scale(0.001));
             
             // we dont need these variables actually, we just need to call ProcessSingleRayInModel to determine if the line of sight to the
             // light source is blocked or not
@@ -229,7 +235,7 @@ Colour Tracer::TraceRay(ModelContainer modelContainer, ModelObject* ignoredModel
             // If our line of sight to the light source doesnt hit any other object, we can light the current pixel, otherwise it will be dark and in shadow
             // If the dot product of the normal and the path to the light is negative, it means the path to the light is behind the reflecting object, thus
             // light cannot possibly reach and we dont have to consider this particular light for this intersection
-            if (!modelContainer.TryGetIntersection(intersectToLight, intersectProperties.intersectPosition, outIntersectedObject, &lightIntersectedObject, &lightIntersectProperties))
+            if (!modelContainer.TryGetIntersection(intersectToLight, intersectToLightOrigin, outIntersectedObject, &lightIntersectedObject, &lightIntersectProperties))
             {
                 // We should use lambertian and phong shading models here
                 
