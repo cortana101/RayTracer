@@ -46,17 +46,7 @@ int main(int argc, const char * argv[])
 {
     int modelLength;
     ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
-    ModelContainer modelContainer;
-    
-    for (int i = 0; i < modelLength; i++)
-    {
-        Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
-        
-        if (model != NULL)
-        {
-            modelContainer.AddItem(model);
-        }
-    }
+    ModelContainer modelContainer (parsedModel, modelLength);
     
     // Make a light source directly overhead
     LightSource light[4];
@@ -74,7 +64,7 @@ int main(int argc, const char * argv[])
     
     cout << "Rendering...\n";
 
-    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, true).WriteToFile("out.ppm");
+    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, false).WriteToFile("out.ppm");
     
     cout << "Done\n";
    

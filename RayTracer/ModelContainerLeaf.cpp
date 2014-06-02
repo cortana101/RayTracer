@@ -25,7 +25,7 @@
 
 #define MINOBJECTSBEFORECONSIDERINGSPLIT 3
 
-ModelContainerLeaf::ModelContainerLeaf()
+ModelContainerLeaf::ModelContainerLeaf(BoundingBox boundingBox) : ModelContainerNode(boundingBox)
 {
     // Do nothing
 }
@@ -35,10 +35,10 @@ ModelContainerLeaf::~ModelContainerLeaf()
     // Do nothing
 }
 
-ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
+ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject)
 {
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
-    PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
+    PartitionPlaneType longestEdge = this->boundingBox.GetLongestEdge();
     planes[0] = longestEdge;
     
     // Ideally we should split on the longest edge if possible so we dont end up with long thin rectangles, so we try the longest edge first
@@ -55,16 +55,19 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     
     if(this->objectCount > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
-        double currentCost = this->GetCost(*newObject, boundingBox);
+        double currentCost = this->GetCost(*newObject, this->boundingBox);
         
         for (int i = 0; i < 3; i++)
         {
-            if (this->TryGetPotentialSplitPosition(planes[i], *newObject, boundingBox, currentCost, &candidateSplitPosition))
+            if (this->TryGetPotentialSplitPosition(planes[i], *newObject, currentCost, &candidateSplitPosition))
             {
-                ModelContainerLeaf* posChild = new ModelContainerLeaf();
-                ModelContainerLeaf* negChild = new ModelContainerLeaf();
+                BoundingBox posChildBoundingBox = this->boundingBox.Constrain(planes[i], candidateSplitPosition, PartitionKeepDirection::Positive);
+                BoundingBox negChildBoundingBox = this->boundingBox.Constrain(planes[i], candidateSplitPosition, PartitionKeepDirection::Negative);
                 
-                ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
+                ModelContainerLeaf* posChild = new ModelContainerLeaf(posChildBoundingBox);
+                ModelContainerLeaf* negChild = new ModelContainerLeaf(negChildBoundingBox);
+                
+                ModelContainerPartition* newPartitionNode = new ModelContainerPartition(this->boundingBox);
                 newPartitionNode->partitionPlane = planes[i];
                 newPartitionNode->partitionPosition = candidateSplitPosition;
                 newPartitionNode->posChild = posChild;
@@ -73,10 +76,10 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
                 // Add everything in the current node to the new node, which will decide which child to put the each object into
                 for (int i = 0; i < this->objectCount; i++)
                 {
-                    newPartitionNode->AddItem(this->objects[i], boundingBox);
+                    newPartitionNode->AddItem(this->objects[i]);
                 }
                 
-                newPartitionNode->AddItem(newObject, boundingBox);
+                newPartitionNode->AddItem(newObject);
                 
                 // After we add everything to the new node, we can delete the current node, because it is being replaced by the new partition node
                 delete this;
@@ -92,12 +95,12 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     return this;
 }
 
-ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode)
+ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, Vector3D nominalPosition, bool* outFullyContainedByNode)
 {
     // At the leaf node we dont really care about the nominal position anymore, we are now in the right place anyways
     
-    *outFullyContainedByNode = boundingBox.Contains(*newObject);
-    return this->AddItem(newObject, boundingBox);
+    *outFullyContainedByNode = this->boundingBox.Contains(*newObject);
+    return this->AddItem(newObject);
 }
 
 double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
@@ -111,14 +114,14 @@ double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
     {
         if (boundingBox.Intersects(*this->objects[i]))
         {
-            totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i], boundingBox);
+            totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i]);
             numberOfContainedObjects++;
         }
     }
     
     if (boundingBox.Intersects(newObject))
     {
-        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(newObject, boundingBox);
+        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(newObject);
         numberOfContainedObjects++;
     }
     
@@ -133,20 +136,20 @@ double ModelContainerLeaf::GetCost(Triangle newObject, BoundingBox boundingBox)
     return COSTOFTRAVERSAL + numberOfContainedObjects * COSTOFINTERSECT / weightedChancesOfHit;
 }
 
-double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox)
+double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object)
 {
     Polygon objectPolygon = Polygon(object);
-    return objectPolygon.Clip(boundingBox).SurfaceArea();
+    return objectPolygon.Clip(this->boundingBox).SurfaceArea();
 }
 
-bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition)
+bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle newObject, double noSplitCost, double* outCandidateSplitPosition)
 {
     // Binary search the best potential split position until we reach a certain threshold
-    double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
-    double candidateSplitPosition = currentBoundingBox.GetMinInAxis(candidatePlane) + searchLength;
+    double searchLength = this->boundingBox.GetLength(candidatePlane) / 2;
+    double candidateSplitPosition = this->boundingBox.GetMinInAxis(candidatePlane) + searchLength;
     
-    BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
-    BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+    BoundingBox posBound = this->boundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
+    BoundingBox negBound = this->boundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
     
     double posCost = this->GetCost(newObject, posBound);
     double negCost = this->GetCost(newObject, negBound);
@@ -167,8 +170,8 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
             candidateSplitPosition -= searchLength;
         }
         
-        posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
-        negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+        posBound = this->boundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
+        negBound = this->boundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
         
         posCost = this->GetCost(newObject, posBound);
         negCost = this->GetCost(newObject, negBound);
@@ -176,7 +179,7 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
         splitAttempts++;
     }
 
-    double currentBoundingboxSurfaceArea = currentBoundingBox.SurfaceArea();
+    double currentBoundingboxSurfaceArea = this->boundingBox.SurfaceArea();
    
     // This is the total cost of doing a split
     double splitCost = COSTOFTRAVERSAL + posBound.SurfaceArea() * posCost / currentBoundingboxSurfaceArea + negBound.SurfaceArea() * negCost / currentBoundingboxSurfaceArea;
@@ -193,7 +196,7 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
     }
 }
 
-bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
+bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
 {
     IntersectProperties localIntersectProperties;
     bool hasIntersect = false;

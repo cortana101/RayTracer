@@ -16,7 +16,7 @@
 class ModelContainerPartition : public ModelContainerNode
 {
 public:
-    ModelContainerPartition();
+    ModelContainerPartition(BoundingBox boundingBox);
     ~ModelContainerPartition();
     
     /// The type of partition
@@ -31,11 +31,11 @@ public:
     /// The child on the negative side of the partition plane
     ModelContainerNode* negChild;
     
-    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
+    virtual ModelContainerNode* AddItem(Triangle* object);
     
-    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
+    virtual ModelContainerNode* AddItem(Triangle* object, Vector3D nominalPosition, bool* outFullyContainedByNode);
     
-    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
+    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
 };
 
 #endif /* defined(__RayTracer__ModelContainerPartition__) */

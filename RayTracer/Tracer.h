@@ -29,7 +29,7 @@ struct ProgressParams
 
 struct TraceRayParams
 {
-    ModelContainer modelContainer;
+    ModelContainer* modelContainer;
     LightSource* lightSources;
     int lightSourceLength;
     int reflectionDepth;

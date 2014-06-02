@@ -68,7 +68,7 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
     for(int i = 0; i < NUMCONCURRENTTHREADS; i++)
     {
         TraceRayParams parameters;
-        parameters.modelContainer = modelContainer;
+        parameters.modelContainer = &modelContainer;
         parameters.lightSources = lightSources;
         parameters.lightSourceLength = lightSourceLength;
         parameters.reflectionDepth = 4;
@@ -147,7 +147,7 @@ void* Tracer::TraceRayThread(void* traceRayParams)
             Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
             Vector3D origin = Vector3D(0.0, 0.0, 0.0);
         
-            outputColour = TraceRay(traceRayParameters->modelContainer,
+            outputColour = TraceRay(*traceRayParameters->modelContainer,
                                            traceRayParameters->lightSources,
                                            traceRayParameters->lightSourceLength,
                                            ray,
@@ -159,35 +159,35 @@ void* Tracer::TraceRayThread(void* traceRayParams)
             projectionUtils::AARayBundle rays = projectionUtils::GetProjectionWithAA(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
             Vector3D origin = Vector3D(0.0, 0.0, 0.0);
             
-            outputColour = TraceRay(traceRayParameters->modelContainer,
+            outputColour = TraceRay(*traceRayParameters->modelContainer,
                                            traceRayParameters->lightSources,
                                            traceRayParameters->lightSourceLength,
                                            rays.v1,
                                            origin,
                                            traceRayParameters->reflectionDepth);
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v2,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v3,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v4,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v5,
