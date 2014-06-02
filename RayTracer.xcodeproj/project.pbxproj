@@ -11,6 +11,13 @@
 		B58CA4D119358ED30011D104 /* QtCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B58CA4D019358ED30011D104 /* QtCore.framework */; };
 		B58CA4D31935AACF0011D104 /* testModel.ply in Copy Files */ = {isa = PBXBuildFile; fileRef = B58CA4D21935AA5E0011D104 /* testModel.ply */; };
 		B58CA4D41935AADA0011D104 /* testModel.ply in CopyFiles */ = {isa = PBXBuildFile; fileRef = B58CA4D21935AA5E0011D104 /* testModel.ply */; };
+		B58CA4D619363C2A0011D104 /* testModel.ply in CopyFiles */ = {isa = PBXBuildFile; fileRef = B58CA4D21935AA5E0011D104 /* testModel.ply */; };
+		B58CA4D91936B46F0011D104 /* ModelContainer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58CA4D71936B46F0011D104 /* ModelContainer.cpp */; };
+		B58CA4E2193791270011D104 /* ModelContainerLeaf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58CA4E0193791270011D104 /* ModelContainerLeaf.cpp */; };
+		B58CA4E5193791670011D104 /* ModelContainerPartition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58CA4E3193791670011D104 /* ModelContainerPartition.cpp */; };
+		B58CA4E819382AB00011D104 /* Polygon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58CA4E619382AB00011D104 /* Polygon.cpp */; };
+		B5996214193971F3004342C8 /* BoundingBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5996212193971F3004342C8 /* BoundingBox.cpp */; };
+		B59962161939743A004342C8 /* ModelContainerNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B59962151939743A004342C8 /* ModelContainerNode.cpp */; };
 		B5B3CD471929864100E09552 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD461929864100E09552 /* main.cpp */; };
 		B5B3CD491929864100E09552 /* RayTracer.1 in Copy Files */ = {isa = PBXBuildFile; fileRef = B5B3CD481929864100E09552 /* RayTracer.1 */; };
 		B5B3CD561929A1A900E09552 /* ppma_io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD541929A1A900E09552 /* ppma_io.cpp */; };
@@ -26,10 +33,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		B58CA4D519363C1C0011D104 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				B58CA4D619363C2A0011D104 /* testModel.ply in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B5B3CD411929864100E09552 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
+			dstPath = /usr/share/man/man1;
 			dstSubfolderSpec = 0;
 			files = (
 				B58CA4D31935AACF0011D104 /* testModel.ply in Copy Files */,
@@ -56,6 +73,23 @@
 		B5671D451932C7A6001E0535 /* PlyFileParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlyFileParser.h; sourceTree = "<group>"; };
 		B58CA4D019358ED30011D104 /* QtCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtCore.framework; path = ../../../Qt/5.2.1/clang_64/lib/QtCore.framework; sourceTree = "<group>"; };
 		B58CA4D21935AA5E0011D104 /* testModel.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = testModel.ply; sourceTree = "<group>"; };
+		B58CA4D71936B46F0011D104 /* ModelContainer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContainer.cpp; sourceTree = "<group>"; };
+		B58CA4D81936B46F0011D104 /* ModelContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModelContainer.h; sourceTree = "<group>"; };
+		B58CA4DA1936EE2B0011D104 /* arrayOfTriangles.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = arrayOfTriangles.ply; sourceTree = "<group>"; };
+		B58CA4DB1936EE2B0011D104 /* WriteArrayOfSpheres.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = WriteArrayOfSpheres.py; sourceTree = "<group>"; };
+		B58CA4DC1936EE2B0011D104 /* WriteArrayOfTriangles.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = WriteArrayOfTriangles.py; sourceTree = "<group>"; };
+		B58CA4DD1936EE3E0011D104 /* arrayOfSpheres.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = arrayOfSpheres.ply; sourceTree = "<group>"; };
+		B58CA4DF193790E40011D104 /* ModelContainerNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ModelContainerNode.h; sourceTree = "<group>"; };
+		B58CA4E0193791270011D104 /* ModelContainerLeaf.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContainerLeaf.cpp; sourceTree = "<group>"; };
+		B58CA4E1193791270011D104 /* ModelContainerLeaf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModelContainerLeaf.h; sourceTree = "<group>"; };
+		B58CA4E3193791670011D104 /* ModelContainerPartition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContainerPartition.cpp; sourceTree = "<group>"; };
+		B58CA4E4193791670011D104 /* ModelContainerPartition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModelContainerPartition.h; sourceTree = "<group>"; };
+		B58CA4E619382AB00011D104 /* Polygon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Polygon.cpp; sourceTree = "<group>"; };
+		B58CA4E719382AB00011D104 /* Polygon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Polygon.h; sourceTree = "<group>"; };
+		B58CA4EA19382C990011D104 /* PartitionPlaneEnums.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PartitionPlaneEnums.h; sourceTree = "<group>"; };
+		B5996212193971F3004342C8 /* BoundingBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BoundingBox.cpp; sourceTree = "<group>"; };
+		B5996213193971F3004342C8 /* BoundingBox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BoundingBox.h; sourceTree = "<group>"; };
+		B59962151939743A004342C8 /* ModelContainerNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContainerNode.cpp; sourceTree = "<group>"; };
 		B5B3CD431929864100E09552 /* RayTracer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RayTracer; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5B3CD461929864100E09552 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B5B3CD481929864100E09552 /* RayTracer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = RayTracer.1; sourceTree = "<group>"; };
@@ -94,6 +128,26 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B58CA4DE19378FC20011D104 /* ModelContainer */ = {
+			isa = PBXGroup;
+			children = (
+				B58CA4EA19382C990011D104 /* PartitionPlaneEnums.h */,
+				B58CA4D71936B46F0011D104 /* ModelContainer.cpp */,
+				B58CA4D81936B46F0011D104 /* ModelContainer.h */,
+				B58CA4E3193791670011D104 /* ModelContainerPartition.cpp */,
+				B58CA4E4193791670011D104 /* ModelContainerPartition.h */,
+				B58CA4E0193791270011D104 /* ModelContainerLeaf.cpp */,
+				B58CA4E1193791270011D104 /* ModelContainerLeaf.h */,
+				B58CA4DF193790E40011D104 /* ModelContainerNode.h */,
+				B59962151939743A004342C8 /* ModelContainerNode.cpp */,
+				B58CA4E619382AB00011D104 /* Polygon.cpp */,
+				B58CA4E719382AB00011D104 /* Polygon.h */,
+				B5996212193971F3004342C8 /* BoundingBox.cpp */,
+				B5996213193971F3004342C8 /* BoundingBox.h */,
+			);
+			name = ModelContainer;
+			sourceTree = "<group>";
+		};
 		B5B3CD3A1929864100E09552 = {
 			isa = PBXGroup;
 			children = (
@@ -114,6 +168,11 @@
 		B5B3CD451929864100E09552 /* RayTracer */ = {
 			isa = PBXGroup;
 			children = (
+				B58CA4DE19378FC20011D104 /* ModelContainer */,
+				B58CA4DD1936EE3E0011D104 /* arrayOfSpheres.ply */,
+				B58CA4DA1936EE2B0011D104 /* arrayOfTriangles.ply */,
+				B58CA4DB1936EE2B0011D104 /* WriteArrayOfSpheres.py */,
+				B58CA4DC1936EE2B0011D104 /* WriteArrayOfTriangles.py */,
 				B58CA4D21935AA5E0011D104 /* testModel.ply */,
 				B5B3CD461929864100E09552 /* main.cpp */,
 				B5671D441932C7A6001E0535 /* PlyFileParser.cpp */,
@@ -171,6 +230,7 @@
 				B58CA4C91935805F0011D104 /* Frameworks */,
 				B5B3CD411929864100E09552 /* Copy Files */,
 				B5B3CD571929A23600E09552 /* CopyFiles */,
+				B58CA4D519363C1C0011D104 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -213,17 +273,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B58CA4E2193791270011D104 /* ModelContainerLeaf.cpp in Sources */,
 				B5CB27FB1931659300725E64 /* IntersectProperties.cpp in Sources */,
 				B5B3CD641929C7DA00E09552 /* Tracer.cpp in Sources */,
 				B5CB27F519304F1200725E64 /* Sphere.cpp in Sources */,
 				B5B3CD471929864100E09552 /* main.cpp in Sources */,
 				B5B3CD5B1929A8CD00E09552 /* OutputRasterizer.cpp in Sources */,
+				B58CA4E5193791670011D104 /* ModelContainerPartition.cpp in Sources */,
 				B5CB27EF192E525200725E64 /* Triangle.cpp in Sources */,
 				B5671D461932C7A6001E0535 /* PlyFileParser.cpp in Sources */,
 				B5B3CD561929A1A900E09552 /* ppma_io.cpp in Sources */,
 				B5CB27F2192FAB5400725E64 /* TransformationMatrix.cpp in Sources */,
+				B58CA4E819382AB00011D104 /* Polygon.cpp in Sources */,
 				B5B3CD5E1929B80A00E09552 /* Vector3D.cpp in Sources */,
 				B5B3CD611929B9E600E09552 /* ProjectionUtils.cpp in Sources */,
+				B58CA4D91936B46F0011D104 /* ModelContainer.cpp in Sources */,
+				B5996214193971F3004342C8 /* BoundingBox.cpp in Sources */,
+				B59962161939743A004342C8 /* ModelContainerNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
