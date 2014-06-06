@@ -9,10 +9,10 @@
 #include "ModelContainerLeaf.h"
 
 // The computational cost of calculating an intersect
-#define COSTOFINTERSECT 50
+#define COSTOFINTERSECT 75
 
 // The computational cost of calculating traversing 1 more node
-#define COSTOFTRAVERSAL 20
+#define COSTOFTRAVERSAL 10
 
 // The threshold of evenness when we are searching for a potential split location
 #define SPLITTHRESHOLD 0.6

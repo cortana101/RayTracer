@@ -19,7 +19,12 @@
 QList<Vector3D> PlyFileParser::VertexCache;
 QList<ModelObject*> PlyFileParser::ModelCache;
 
-ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
+ModelObject** PlyFileParser::ParseFile(string fileName, int *outModelLength)
+{
+    return ParseFile(fileName, outModelLength, Vector3D(0.0, 0.0, 0.0));
+}
+
+ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength, Vector3D translation)
 {
     QString qfileName = QString::fromStdString(fileName);
     QFile qFile (qfileName);
@@ -67,7 +72,7 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
         }
         else
         {
-            ParseDataLine(line, elementTypes.front());
+            ParseDataLine(line, elementTypes.front(), translation);
 
             elementTypes.front().elementCount--;
             
@@ -91,13 +96,13 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
     return ConvertToArray(ModelCache, outModelLength);
 }
 
-void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo)
+void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo, Vector3D translation)
 {
     QString qElementName = QString::fromStdString(elementInfo.elementName);
     
     if (QString::compare(qElementName, "vertex", Qt::CaseInsensitive) == 0)
     {
-        Vector3D vertex = ParseVertex(line);
+        Vector3D vertex = ParseVertex(line, translation);
         VertexCache.append(vertex);
     }
     else if (QString::compare(qElementName, "triangle", Qt::CaseInsensitive) == 0 || QString::compare(qElementName, "face", Qt::CaseInsensitive) == 0)
@@ -112,26 +117,26 @@ void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo)
     }
 }
 
-Vector3D PlyFileParser::ParseVertex(QString line)
+Vector3D PlyFileParser::ParseVertex(QString line, Vector3D translation)
 {
     QStringList dataValues = line.split(" ");
-    
+    /*
     if (dataValues.length() != 3)
     {
         throw "Incorrect number of fields specified for vertex data";
-    }
+    }*/
     
     double x = dataValues.at(0).toDouble();
     double y = dataValues.at(1).toDouble();
     double z = dataValues.at(2).toDouble();
     
-    return Vector3D(x, y, z);
+    return Vector3D(x, y, z).Scale(15.0).Add(translation);
 }
 
 Triangle* PlyFileParser::ParseTriangle(QString line)
 {
     QStringList dataValues = line.split(" ");
-    
+    /*
     if (dataValues.length() != 8)
     {
         throw "Incorrect number of fields specified for vertex data";
@@ -140,17 +145,17 @@ Triangle* PlyFileParser::ParseTriangle(QString line)
     double colourR = dataValues.at(0).toDouble();
     double colourG = dataValues.at(1).toDouble();
     double colourB = dataValues.at(2).toDouble();
-    double gloss = dataValues.at(3).toDouble();
-    int v1Index = dataValues.at(5).toInt();
-    int v2Index = dataValues.at(6).toInt();
-    int v3Index = dataValues.at(7).toInt();
+    double gloss = dataValues.at(3).toDouble();*/
+    int v1Index = dataValues.at(1).toInt();
+    int v2Index = dataValues.at(2).toInt();
+    int v3Index = dataValues.at(3).toInt();
     
     Triangle* output = new Triangle();
     output->p1 = VertexCache.at(v1Index);
     output->p2 = VertexCache.at(v2Index);
     output->p3 = VertexCache.at(v3Index);
-    output->colour = Colour(colourR, colourG, colourB);
-    output->gloss = gloss;
+    output->colour = Colour(255, 100, 30);
+    output->gloss = 200.0;
     
     return output;
 }

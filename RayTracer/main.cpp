@@ -44,8 +44,9 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    int modelLength;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTrianglesLarge.ply", &modelLength);
+    int modelLength, modelLength2;
+    ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunny.ply", &modelLength, Vector3D(-2.0, -2.0, 4.0));
+    //ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunny.ply", &modelLength2, Vector3D(0.0, -2.0, 3.0));
     ModelContainer modelContainer;
     
     for (int i = 0; i < modelLength; i++)
@@ -57,6 +58,16 @@ int main(int argc, const char * argv[])
             modelContainer.AddItem(model);
         }
     }
+    /*
+    for (int i = 0; i < modelLength; i++)
+    {
+        Triangle* model = dynamic_cast<Triangle*>(parsedModel2[i]);
+        
+        if (model != NULL)
+        {
+            modelContainer.AddItem(model);
+        }
+    }*/
     
     // Make a light source directly overhead
     LightSource light[4];

@@ -29,7 +29,7 @@ public:
     Vector3D GetNominalPosition();
     
     /// Determines if the current triangle intersects with the other triangle
-    bool IntersectsWith(Triangle otherTriangle);
+    ///bool IntersectsWith(Triangle otherTriangle);
     
     /// Determines if the current triangle intersects with the edge defined by the 2 endpoints v1 and v2
     bool IntersectsWithEdge(Vector3D v1, Vector3D v2);

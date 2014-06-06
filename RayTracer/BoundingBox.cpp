@@ -78,17 +78,16 @@ bool BoundingBox::Intersects(Triangle triangle)
 {
     BoundingBox triangleBound = BoundingBox::GetMinimumBoundingBox(triangle);
     
-    if (this->IsDisjoint(triangleBound))
-    {
-        return false;
-    }
-    
     if (this->Contains(triangle.p1) ||
         this->Contains(triangle.p2) ||
         this->Contains(triangle.p3))
     {
         return true;
     }
+    else if (this->IsDisjoint(triangleBound))
+     {
+         return false;
+     }
     else
     {
         // Top 4 vertices of this bounding box
@@ -103,28 +102,34 @@ bool BoundingBox::Intersects(Triangle triangle)
         Vector3D vb3 = this->min;
         Vector3D vb4 = Vector3D(this->min.x, this->min.y, this->max.z);
        
-        // A list of triangles that describe the 6 sides of this bounding box
-        Triangle outputTriangles[12];
-        outputTriangles[0] = Triangle(vt1, vt2, vt3);
-        outputTriangles[1] = Triangle(vt1, vt3, vt4);
-        outputTriangles[2] = Triangle(vt1, vb1, vb2);
-        outputTriangles[3] = Triangle(vt1, vb2, vt2);
-        outputTriangles[4] = Triangle(vt1, vb1, vb4);
-        outputTriangles[5] = Triangle(vt1, vb4, vt4);
-        outputTriangles[6] = Triangle(vb3, vt3, vt2);
-        outputTriangles[7] = Triangle(vb3, vt2, vb2);
-        outputTriangles[8] = Triangle(vb3, vb4, vt4);
-        outputTriangles[9] = Triangle(vb3, vt4, vt3);
-        outputTriangles[10] = Triangle(vb3, vb4, vb1);
-        outputTriangles[11] = Triangle(vb3, vb1, vb2);
-        
-        for (int i = 0; i < 12; i++)
-        {
-            if (outputTriangles[i].IntersectsWith(triangle))
-            {
-                return true;
-            }
-        }
+        // A list of edges on this bounding box
+        /*
+        Vector3D outputEdges[12];
+        outputEdges[0] = vt1.PointToPoint(vt2);
+        outputEdges[1] = vt2.PointToPoint(vt3);
+        outputEdges[2] = vt3.PointToPoint(vt4);
+        outputEdges[3] = vt4.PointToPoint(vt1);
+        outputEdges[4] = vt1.PointToPoint(vb1);
+        outputEdges[5] = vt2.PointToPoint(vb2);
+        outputEdges[6] = vt3.PointToPoint(vb3);
+        outputEdges[7] = vt4.PointToPoint(vb4);
+        outputEdges[8] = vb1.PointToPoint(vb2);
+        outputEdges[9] = vb2.PointToPoint(vb3);
+        outputEdges[10] = vb3.PointToPoint(vb4);
+        outputEdges[11] = vb4.PointToPoint(vb1);*/
+
+        return triangle.IntersectsWithEdge(vt1, vt2) ||
+                triangle.IntersectsWithEdge(vt2, vt3) ||
+                triangle.IntersectsWithEdge(vt3, vt4) ||
+                triangle.IntersectsWithEdge(vt4, vt1) ||
+                triangle.IntersectsWithEdge(vt1, vb1) ||
+                triangle.IntersectsWithEdge(vt2, vb2) ||
+                triangle.IntersectsWithEdge(vt3, vb3) ||
+                triangle.IntersectsWithEdge(vt4, vb4) ||
+                triangle.IntersectsWithEdge(vb1, vb2) ||
+                triangle.IntersectsWithEdge(vb1, vb2) ||
+                triangle.IntersectsWithEdge(vb1, vb2) ||
+        triangle.IntersectsWithEdge(vb1, vb2);
     }
 
     return false;
