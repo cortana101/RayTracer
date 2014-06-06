@@ -133,6 +133,59 @@ double Polygon::SurfaceArea()
     return surfaceArea;
 }
 
+bool Polygon::Intersects(BoundingBox boundingBox)
+{
+    for (int i = 0; i < this->vertexCount; i++)
+    {
+        if (boundingBox.Contains(this->vertices[i]))
+        {
+            return true;
+        }
+    }
+
+    BoundingBox minBoundingBox (Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+    if (!this->TryGetMinimumBoundingBox(&minBoundingBox))
+    {
+        // Means we only have zero or 1 vertex, in either case it means the triangle got completely clipped out
+        return false;
+    }
+    
+    if (boundingBox.IsDisjoint(minBoundingBox))
+    {
+        return false;
+    }
+    
+    // In theory this part could be made even faster, we dont actually need to clip the whole thing before evaluating intersect
+    // at each clip, we can get the intersecting vertices and check the intersecting vertices against the other 2 bounds, if its in
+    // we can return
+    return this->Clip(boundingBox).vertexCount > 2;
+}
+
+bool Polygon::TryGetMinimumBoundingBox(BoundingBox* outBoundingBox)
+{
+    if (this->vertexCount <= 1)
+    {
+        return false;
+    }
+    
+    Vector3D max = this->vertices[0];
+    Vector3D min = this->vertices[0];
+    
+    for (int i = 1; i < this->vertexCount; i++)
+    {
+        max.x = std::max(max.x, this->vertices[i].x);
+        max.y = std::max(max.y, this->vertices[i].y);
+        max.z = std::max(max.z, this->vertices[i].z);
+        min.x = std::min(min.x, this->vertices[i].x);
+        min.y = std::min(min.y, this->vertices[i].y);
+        min.z = std::min(min.z, this->vertices[i].z);
+    }
+    
+    *outBoundingBox = BoundingBox(min, max);
+    
+    return true;
+}
+
 Vector3D Polygon::FindIntersectingVertex(PartitionPlaneType plane, double planePosition, Vector3D vertex1, Vector3D vertex2)
 {
     double v1Component, v2Component;

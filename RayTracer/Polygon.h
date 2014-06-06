@@ -34,6 +34,11 @@ public:
     
     double SurfaceArea();
     
+    /// Determines if the current polygon intersects the provided bounding box
+    bool Intersects(BoundingBox boundingBox);
+    
+    bool TryGetMinimumBoundingBox(BoundingBox* outBoundingBox);
+    
 private:
     Colour startingColour;
     double startingGloss;

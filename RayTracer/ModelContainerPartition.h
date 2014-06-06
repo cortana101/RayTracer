@@ -12,6 +12,7 @@
 #include <iostream>
 #include "ModelContainerNode.h"
 #include "PartitionPlaneEnums.h"
+#include "Polygon.h"
 
 class ModelContainerPartition : public ModelContainerNode
 {

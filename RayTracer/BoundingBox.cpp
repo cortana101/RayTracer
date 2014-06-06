@@ -74,67 +74,6 @@ BoundingBox BoundingBox::ExpandToContain(BoundingBox targetBoundingBox)
     return BoundingBox(newMin, newMax);
 }
 
-bool BoundingBox::Intersects(Triangle triangle)
-{
-    BoundingBox triangleBound = BoundingBox::GetMinimumBoundingBox(triangle);
-    
-    if (this->Contains(triangle.p1) ||
-        this->Contains(triangle.p2) ||
-        this->Contains(triangle.p3))
-    {
-        return true;
-    }
-    else if (this->IsDisjoint(triangleBound))
-     {
-         return false;
-     }
-    else
-    {
-        // Top 4 vertices of this bounding box
-        Vector3D vt1 = this->max;
-        Vector3D vt2 = Vector3D(this->max.x, this->max.y, this->min.z);
-        Vector3D vt3 = Vector3D(this->min.x, this->max.y, this->min.z);
-        Vector3D vt4 = Vector3D(this->min.x, this->max.y, this->max.z);
-        
-        // The bottom 4 vertices
-        Vector3D vb1 = Vector3D(this->max.x, this->min.y, this->max.z);
-        Vector3D vb2 = Vector3D(this->max.x, this->min.y, this->min.z);
-        Vector3D vb3 = this->min;
-        Vector3D vb4 = Vector3D(this->min.x, this->min.y, this->max.z);
-       
-        // A list of edges on this bounding box
-        /*
-        Vector3D outputEdges[12];
-        outputEdges[0] = vt1.PointToPoint(vt2);
-        outputEdges[1] = vt2.PointToPoint(vt3);
-        outputEdges[2] = vt3.PointToPoint(vt4);
-        outputEdges[3] = vt4.PointToPoint(vt1);
-        outputEdges[4] = vt1.PointToPoint(vb1);
-        outputEdges[5] = vt2.PointToPoint(vb2);
-        outputEdges[6] = vt3.PointToPoint(vb3);
-        outputEdges[7] = vt4.PointToPoint(vb4);
-        outputEdges[8] = vb1.PointToPoint(vb2);
-        outputEdges[9] = vb2.PointToPoint(vb3);
-        outputEdges[10] = vb3.PointToPoint(vb4);
-        outputEdges[11] = vb4.PointToPoint(vb1);*/
-
-        return triangle.IntersectsWithEdge(vt1, vt2) ||
-                triangle.IntersectsWithEdge(vt2, vt3) ||
-                triangle.IntersectsWithEdge(vt3, vt4) ||
-                triangle.IntersectsWithEdge(vt4, vt1) ||
-                triangle.IntersectsWithEdge(vt1, vb1) ||
-                triangle.IntersectsWithEdge(vt2, vb2) ||
-                triangle.IntersectsWithEdge(vt3, vb3) ||
-                triangle.IntersectsWithEdge(vt4, vb4) ||
-                triangle.IntersectsWithEdge(vb1, vb2) ||
-                triangle.IntersectsWithEdge(vb2, vb3) ||
-                triangle.IntersectsWithEdge(vb3, vb4) ||
-        triangle.IntersectsWithEdge(vb4, vb1);
-    }
-
-    return false;
-}
-
 bool BoundingBox::IsDisjoint(BoundingBox otherBox)
 {
     if (this->max.x < otherBox.min.x ||

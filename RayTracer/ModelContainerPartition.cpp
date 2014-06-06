@@ -25,12 +25,13 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle *object, BoundingB
     
     // Recursively add the triangle to the child nodes. Note that if the triangle intersects
     // both childs, we add a reference to it in BOTH childs
-    if (posChildBoundingBox.Intersects(*object))
+   
+    if (this->Intersects(posChildBoundingBox, *object))
     {
         this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
     }
     
-    if (negChildBoundingBox.Intersects(*object))
+    if (this->Intersects(negChildBoundingBox, *object))
     {
         this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
     }
@@ -47,12 +48,12 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
     BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
     
     bool fullyContainedByChild = false;
-    
+   
     if (posChildBoundingBox.Contains(nominalPosition))
     {
         this->posChild = this->posChild->AddItem(object, posChildBoundingBox, nominalPosition, &fullyContainedByChild);
         
-        if (!fullyContainedByChild && negChildBoundingBox.Intersects(*object))
+        if (!fullyContainedByChild && this->Intersects(negChildBoundingBox, *object))
         {
             this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
         }
@@ -61,7 +62,7 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
     {
         this->negChild = this->negChild->AddItem(object, negChildBoundingBox, nominalPosition, &fullyContainedByChild);
         
-        if (!fullyContainedByChild && posChildBoundingBox.Intersects(*object))
+        if (!fullyContainedByChild && this->Intersects(posChildBoundingBox, *object))
         {
             this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
         }

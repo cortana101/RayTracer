@@ -12,6 +12,7 @@
 #include "Vector3D.h"
 #include "Triangle.h"
 #include "BoundingBox.h"
+#include "Polygon.h"
 
 class ModelContainerNode
 {

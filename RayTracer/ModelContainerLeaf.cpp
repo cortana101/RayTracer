@@ -111,7 +111,9 @@ double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox,
     
     for (int i = 0; i < this->objectCount(); i++)
     {
-        if (boundingBox.Intersects(*this->objects[i]))
+        Polygon objectPolygon (*this->objects[i]);
+        
+        if (this->Intersects(boundingBox, *this->objects[i]))
         {
             totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i], boundingBox);
             numberOfContainedObjects++;
@@ -119,7 +121,9 @@ double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox,
         }
     }
     
-    if (boundingBox.Intersects(*newObject))
+    Polygon newObjectPolygon (*newObject);
+    
+    if (this->Intersects(boundingBox, *newObject))
     {
         totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*newObject, boundingBox);
         numberOfContainedObjects++;

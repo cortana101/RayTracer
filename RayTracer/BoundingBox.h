@@ -29,9 +29,6 @@ public:
     
     /// Determines if there is no overlap between the current bounding box and the provided bounding box
     bool IsDisjoint(BoundingBox otherBox);
-
-    /// Determines whether or not the given triangle intersects with any part of the space bounded by this bounding box
-    bool Intersects(Triangle triangle);
     
     /// Determines if the given point is within the current bounding box
     bool Contains(Vector3D point);

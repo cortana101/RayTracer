@@ -11,5 +11,6 @@
 
 bool ModelContainerNode::Intersects(BoundingBox boundingBox, Triangle object)
 {
-    return boundingBox.Intersects(object);
+    Polygon objectPolygon (object);
+    return objectPolygon.Intersects(boundingBox);
 }
