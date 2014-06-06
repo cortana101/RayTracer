@@ -26,6 +26,8 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int *outModelLength)
 
 ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength, Vector3D translation)
 {
+    VertexCache.clear();
+    ModelCache.clear();
     QString qfileName = QString::fromStdString(fileName);
     QFile qFile (qfileName);
     qFile.open(QIODevice::ReadOnly);
