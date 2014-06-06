@@ -127,9 +127,9 @@ bool BoundingBox::Intersects(Triangle triangle)
                 triangle.IntersectsWithEdge(vt3, vb3) ||
                 triangle.IntersectsWithEdge(vt4, vb4) ||
                 triangle.IntersectsWithEdge(vb1, vb2) ||
-                triangle.IntersectsWithEdge(vb1, vb2) ||
-                triangle.IntersectsWithEdge(vb1, vb2) ||
-        triangle.IntersectsWithEdge(vb1, vb2);
+                triangle.IntersectsWithEdge(vb2, vb3) ||
+                triangle.IntersectsWithEdge(vb3, vb4) ||
+        triangle.IntersectsWithEdge(vb4, vb1);
     }
 
     return false;

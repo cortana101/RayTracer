@@ -10,16 +10,22 @@
 
 Polygon::Polygon(Triangle startingTriangle)
 {
-    this->vertices.append(startingTriangle.p1);
-    this->vertices.append(startingTriangle.p2);
-    this->vertices.append(startingTriangle.p3);
+    this->vertices[0] = startingTriangle.p1;
+    this->vertices[1] = startingTriangle.p2;
+    this->vertices[2] = startingTriangle.p3;
+    this->vertexCount = 3;
     this->startingColour = startingTriangle.colour;
     this->startingGloss = startingTriangle.gloss;
 }
 
-Polygon::Polygon(QList<Vector3D> vertices, Colour colour, double gloss)
+Polygon::Polygon(Vector3D* vertices, int vertexCount, Colour colour, double gloss)
 {
-    this->vertices = vertices;
+    for (int i = 0; i < vertexCount; i++)
+    {
+        this->vertices[i] = vertices[i];
+    }
+    
+    this->vertexCount = vertexCount;
     this->startingColour = colour;
     this->startingGloss = gloss;
 }
@@ -31,15 +37,16 @@ Polygon Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionK
     // set of vertices to be clipped. This being the case, its sufficient to track the first and last indicies
     // of the vertices that got clipped
     
-    QList<Vector3D> keepers;
+    Vector3D keepers[MAXVERTEXCOUNT];
+    int keeperIterator = 0;
     
-    for (int i = 0; i < this->vertices.length(); i++)
+    for (int i = 0; i < this->vertexCount; i++)
     {
         double v1PlanePosition, v2PlanePosition;
-        Vector3D v1 = this->vertices.at(i);
+        Vector3D v1 = this->vertices[i];
         
-        int v2Index = (i + 1) >= this->vertices.length() ? 0 : i + 1;
-        Vector3D v2 = this->vertices.at(v2Index);
+        int v2Index = (i + 1) >= this->vertexCount ? 0 : i + 1;
+        Vector3D v2 = this->vertices[v2Index];
         
         if (plane == PartitionPlaneType::X)
         {
@@ -66,12 +73,15 @@ Polygon Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionK
             if ((v1PlanePosition <= planePosition && keepDirection == PartitionKeepDirection::Negative) ||
                 (v1PlanePosition > planePosition && keepDirection == PartitionKeepDirection::Positive))
             {
-                keepers.append(v1);
-                keepers.append(intersectingVertex);
+                keepers[keeperIterator] = v1;
+                keeperIterator++;
+                keepers[keeperIterator] = intersectingVertex;
+                keeperIterator++;
             }
             else
             {
-                keepers.append(intersectingVertex);
+                keepers[keeperIterator] = intersectingVertex;
+                keeperIterator++;
             }
 
         }
@@ -79,11 +89,12 @@ Polygon Polygon::Clip(PartitionPlaneType plane, double planePosition, PartitionK
                  (v1PlanePosition > planePosition && keepDirection == PartitionKeepDirection::Positive))
         {
             // In this case both vertices are keepers
-            keepers.append(v1);
+            keepers[keeperIterator] = v1;
+            keeperIterator++;
         }
     }
  
-    return Polygon(keepers);
+    return Polygon(keepers, keeperIterator);
 }
 
 Polygon Polygon::Clip(BoundingBox boundingBox)
@@ -101,7 +112,7 @@ Polygon Polygon::Clip(BoundingBox boundingBox)
 
 double Polygon::SurfaceArea()
 {
-    int numTriangles = this->vertices.length() - 2;
+    int numTriangles = this->vertexCount - 2;
     
     // Its possible after clipping we end up with no vertices left to form triangles, in which case the polygon just gets clipped out of existence
     if (numTriangles < 1)
@@ -114,7 +125,7 @@ double Polygon::SurfaceArea()
     for (int i = 0; i < numTriangles; i++)
     {
         // Always start with the vertex at 0
-        Triangle triangle (this->vertices.at(0), this->vertices.at(1 + i), this->vertices.at(2 + i));
+        Triangle triangle (this->vertices[0], this->vertices[1 + i], this->vertices[2 + i]);
         
         surfaceArea += triangle.SurfaceArea();
     }

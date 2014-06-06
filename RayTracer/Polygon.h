@@ -16,13 +16,15 @@
 #include "PartitionPlaneEnums.h"
 #include "BoundingBox.h"
 
+#define MAXVERTEXCOUNT 12 //Clip 6 sides the most we can get is 9 vertices
+
 /// Contains a polygon of 3 or more vertices that lie on the same plane
 /// Mainly used for clipping operations and getting the resulting triangles
 class Polygon
 {
 public:
     Polygon(Triangle startingTriangle);
-    Polygon(QList<Vector3D> vertices, Colour color = Colour(0.0, 0.0, 0.0), double gloss = 0.0);
+    Polygon(Vector3D* vertices, int vertexCount, Colour color = Colour(0.0, 0.0, 0.0), double gloss = 0.0);
     
     /// Clips the current polygon along the provided plane
     Polygon Clip(PartitionPlaneType plane, double planePosition, PartitionKeepDirection keepDirection);
@@ -36,7 +38,8 @@ private:
     Colour startingColour;
     double startingGloss;
     /// List of vertices for this polygon
-    QList<Vector3D> vertices;
+    Vector3D vertices[MAXVERTEXCOUNT];
+    int vertexCount = 0;
     
     /// Takes in 2 vertices, one a keeper the other clipped, and finds the point where the edge between them intersects
     /// the clipping plane
