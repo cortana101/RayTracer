@@ -16,7 +16,7 @@
 #include "PartitionPlaneEnums.h"
 #include "BoundingBox.h"
 
-#define MAXVERTEXCOUNT 12 //Clip 6 sides the most we can get is 9 vertices
+#define MAXVERTEXCOUNT 9 //Clip 6 sides the most we can get is 9 vertices
 
 /// Contains a polygon of 3 or more vertices that lie on the same plane
 /// Mainly used for clipping operations and getting the resulting triangles

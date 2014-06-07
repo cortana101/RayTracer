@@ -38,11 +38,11 @@ class PlyFileParser
 {
 public:
     static ModelObject** ParseFile(string fileName, int* outModelLength);
-    static ModelObject** ParseFile(string fileName, int* outModelLength, Vector3D translation);
+    static ModelObject** ParseFile(string fileName, int* outModelLength, double scale, Vector3D translation);
 private:
-    static void ParseDataLine(QString line, ElementInfo elementInfo, Vector3D translation);
+    static void ParseDataLine(QString line, ElementInfo elementInfo, double scale, Vector3D translation);
 //    static Triangle* ParseTriangle(QString line);
-    static Vector3D ParseVertex(QString line, Vector3D translation);
+    static Vector3D ParseVertex(QString line, double scale, Vector3D translation);
     static Triangle* ParseTriangle(QString line);
     static Sphere* ParseSphere(QString line);
     static QList<Vector3D> VertexCache;

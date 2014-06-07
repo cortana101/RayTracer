@@ -15,7 +15,7 @@
 #define COSTOFTRAVERSAL 10
 
 // The threshold of evenness when we are searching for a potential split location
-#define SPLITTHRESHOLD 0.6
+#define SPLITTHRESHOLD 0.8
 
 #define WEIGHTEDCHANCETHRESHOLD 0.0001
 
