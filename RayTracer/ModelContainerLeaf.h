@@ -41,19 +41,17 @@ class ModelContainerLeaf : public ModelContainerNode
 public:
     ModelContainerLeaf();
     ~ModelContainerLeaf();
-    vector<TriangleSplitCosts> *objects;
     vector<Triangle*> containedObjects;
-    double currentBoundedSurfaceArea();
+    double CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
-    virtual void ClearCachedSurfaceAreas();
 private:
     /// Gets the current computational cost if we add the new object
     double GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox);
-    double GetTotalContainedSurfaceArea(TriangleSplitCosts newObjectCost, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<TriangleSplitCosts> *outChildBoundedObjects);
+    double GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects);
     double GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox);
-    bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, TriangleSplitCosts newObjectCost, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<TriangleSplitCosts> *posBoundedObjects, vector<TriangleSplitCosts> *negBoundedObjects);
+    bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, vector<TriangleSplitCosts> triangleSplitCosts, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<Triangle*> *posBoundedObjects, vector<Triangle*> *negBoundedObjects);
 };
 
 #endif /* defined(__RayTracer__ModelContainerLeaf__) */

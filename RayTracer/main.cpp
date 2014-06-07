@@ -45,11 +45,11 @@ OutputRasterizer* writeSample();
 int main(int argc, const char * argv[])
 {
     int modelLength, modelLength2, modelLength3;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
+    //ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
     //ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 30.0, Vector3D(0.0, -1.0, 9.0));
-    //ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
+    ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
     ModelContainer modelContainer;
-    
+    /*
     for (int i = 0; i < modelLength; i++)
     {
         Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
@@ -58,7 +58,7 @@ int main(int argc, const char * argv[])
         {
             modelContainer.AddItem(model);
         }
-    }
+    }*/
     /*
     for (int i = 0; i < modelLength2; i++)
     {
@@ -69,7 +69,7 @@ int main(int argc, const char * argv[])
             modelContainer.AddItem(model);
         }
     }
-    
+    */
     for (int i = 0; i < modelLength3; i++)
     {
         Triangle* model = dynamic_cast<Triangle*>(parsedModel3[i]);
@@ -78,9 +78,7 @@ int main(int argc, const char * argv[])
         {
             modelContainer.AddItem(model);
         }
-    }*/
-    
-    modelContainer.ClearCachedSurfaceAreas();
+    }
     
     // Make a light source directly overhead
     LightSource light[4];

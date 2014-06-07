@@ -123,10 +123,3 @@ bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3
     
     return foundHitInChild;
 }
-
-void ModelContainerPartition::ClearCachedSurfaceAreas()
-{
-    // Basically do a Depth first traversal and clear all the surface area values in each leaf node
-    this->posChild->ClearCachedSurfaceAreas();
-    this->negChild->ClearCachedSurfaceAreas();
-}

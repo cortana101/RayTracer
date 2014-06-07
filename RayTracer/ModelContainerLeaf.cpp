@@ -27,22 +27,21 @@
 
 ModelContainerLeaf::ModelContainerLeaf()
 {
-    this->objects = NULL;
+    this->containedObjects = vector<Triangle*>();
 }
 
 ModelContainerLeaf::~ModelContainerLeaf()
 {
-    this->objects->clear();
-    delete this->objects;
+    this->containedObjects.clear();
 }
 
-double ModelContainerLeaf::currentBoundedSurfaceArea()
+double ModelContainerLeaf::CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts)
 {
     double accumulator = 0.0;
     
-    for (int i = 0; i < this->objects->size(); i++)
+    for (vector<TriangleSplitCosts>::iterator i = triangleSplitCosts.begin(); i != triangleSplitCosts.end(); ++i)
     {
-        accumulator += (*this->objects)[i].containedSurfaceArea;
+        accumulator += i->containedSurfaceArea;
     }
     
     return accumulator;
@@ -50,11 +49,6 @@ double ModelContainerLeaf::currentBoundedSurfaceArea()
 
 ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
 {
-    if (this->objects == NULL)
-    {
-        this->objects = new vector<TriangleSplitCosts>();
-    }
-    
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
     PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
     planes[0] = longestEdge;
@@ -71,25 +65,33 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     
     double candidateSplitPosition;
 
-     TriangleSplitCosts newTriangleCost (newObject, boundingBox);
+    // Declare a temporary array just for this add calculation
+    vector<TriangleSplitCosts> triangleSplitCosts;
     
-    if(this->objects->size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    for (vector<Triangle*>::iterator i = this->containedObjects.begin(); i != this->containedObjects.end(); ++i)
     {
-        vector<TriangleSplitCosts> *posBoundedObjects = new vector<TriangleSplitCosts>();
-        vector<TriangleSplitCosts> *negBoundedObjects = new vector<TriangleSplitCosts>();
+        triangleSplitCosts.push_back(TriangleSplitCosts(*i, boundingBox));
+    }
+    
+    triangleSplitCosts.push_back(TriangleSplitCosts(newObject, boundingBox));
+    
+    if(this->containedObjects.size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    {
+        vector<Triangle*> posBoundedObjects = vector<Triangle*>();
+        vector<Triangle*> negBoundedObjects = vector<Triangle*>();
         
         // We dont actually need to get the bounded objects for this call, just hacking it for now
-        double currentCost = this->GetCost(this->currentBoundedSurfaceArea(), (int)this->objects->size() + 1, boundingBox);
+        double currentCost = this->GetCost(this->CurrentBoundedSurfaceArea(triangleSplitCosts), (int)this->containedObjects.size() + 1, boundingBox);
         
         for (int i = 0; i < 3; i++)
         {
-            if (this->TryGetPotentialSplitPosition(planes[i], newTriangleCost, boundingBox, currentCost, &candidateSplitPosition, posBoundedObjects, negBoundedObjects))
+            if (this->TryGetPotentialSplitPosition(planes[i], triangleSplitCosts, boundingBox, currentCost, &candidateSplitPosition, &posBoundedObjects, &negBoundedObjects))
             {
                 ModelContainerLeaf* posChild = new ModelContainerLeaf();
                 ModelContainerLeaf* negChild = new ModelContainerLeaf();
                 
-                posChild->objects = posBoundedObjects;
-                negChild->objects = negBoundedObjects;
+                posChild->containedObjects = posBoundedObjects;
+                negChild->containedObjects = negBoundedObjects;
 
                 ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
                 newPartitionNode->partitionPlane = planes[i];
@@ -106,7 +108,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     }
     
     // Add the new object to the current node if we havent already decided to split the node
-    this->objects->push_back(newTriangleCost);
+    this->containedObjects.push_back(newObject);
     return this;
 }
 
@@ -131,7 +133,7 @@ double ModelContainerLeaf::GetCost(double totalContainedSurfaceArea, int numberO
     return COSTOFTRAVERSAL + numberOfContainedObjects * COSTOFINTERSECT / weightedChancesOfHit;
 }
 
-double ModelContainerLeaf::GetTotalContainedSurfaceArea(TriangleSplitCosts newObjectCost, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<TriangleSplitCosts> *outChildBoundedObjects)
+double ModelContainerLeaf::GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects)
 {
     // The cost of a leaf node is basically the cost of the number of triangles in the leaf
     // weighed by the probability of hitting any of the triangles
@@ -141,43 +143,25 @@ double ModelContainerLeaf::GetTotalContainedSurfaceArea(TriangleSplitCosts newOb
     
     outChildBoundedObjects->clear();
     
-    for (int i = 0; i < this->objects->size(); i++)
+    for (vector<TriangleSplitCosts>::iterator i = triangleSplitCosts.begin(); i != triangleSplitCosts.end(); ++i)
     {
-        if ((*this->objects)[i].clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
+        if (i->clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
         {
             if (objectIntersectsPlane)
             {
-                Polygon childClippedPolygon = (*this->objects)[i].clippedObject.Clip(planeType, planePosition, keepDirection);
-                TriangleSplitCosts childSplitCosts (childClippedPolygon, (*this->objects)[i].referencedTriangle);
-                outChildBoundedObjects->push_back(childSplitCosts);
+                Polygon childClippedPolygon = i->clippedObject.Clip(planeType, planePosition, keepDirection);
+                TriangleSplitCosts childSplitCosts (childClippedPolygon, i->referencedTriangle);
+                outChildBoundedObjects->push_back(childSplitCosts.referencedTriangle);
                 totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
             }
             else
             {
-                totalSurfaceAreaOfClippedObjects += (*this->objects)[i].containedSurfaceArea;
-                outChildBoundedObjects->push_back((*this->objects)[i]);
+                totalSurfaceAreaOfClippedObjects += i->containedSurfaceArea;
+                outChildBoundedObjects->push_back(i->referencedTriangle);
             }
             
             numberOfContainedObjects++;
         }
-    }
-    
-    if (newObjectCost.clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
-    {
-        if (objectIntersectsPlane)
-        {
-            Polygon childClippedPolygon = newObjectCost.clippedObject.Clip(planeType, planePosition, keepDirection);
-            TriangleSplitCosts childSplitCosts (childClippedPolygon, newObjectCost.referencedTriangle);
-            outChildBoundedObjects->push_back(childSplitCosts);
-            totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
-        }
-        else
-        {
-            totalSurfaceAreaOfClippedObjects += newObjectCost.containedSurfaceArea;
-            outChildBoundedObjects->push_back(newObjectCost);
-        }
-        
-        numberOfContainedObjects++;
     }
     
     return totalSurfaceAreaOfClippedObjects;
@@ -189,7 +173,7 @@ double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox bo
     return objectPolygon.Clip(boundingBox).SurfaceArea();
 }
 
-bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, TriangleSplitCosts newObjectCost, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<TriangleSplitCosts> *posBoundedObjects, vector<TriangleSplitCosts> *negBoundedObjects)
+bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, vector<TriangleSplitCosts> triangleSplitCosts, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<Triangle*> *posBoundedObjects, vector<Triangle*> *negBoundedObjects)
 {
     // Binary search the best potential split position until we reach a certain threshold
     double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
@@ -198,8 +182,8 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
     BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
     BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
     
-    double posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
-    double negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
+    double posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
+    double negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
     
     double posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
     double negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
@@ -223,8 +207,8 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
         posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
         negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
 
-        posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
-        negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
+        posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
+        negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
         
         posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
         negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
@@ -268,15 +252,4 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     }
     
     return hasIntersect;
-}
-
-void ModelContainerLeaf::ClearCachedSurfaceAreas()
-{
-    for (vector<TriangleSplitCosts>::iterator i = this->objects->begin(); i != this->objects->end(); ++i)
-    {
-        this->containedObjects.push_back(i->referencedTriangle);
-    }
-    
-    this->objects->clear();
-    delete this->objects;
 }
