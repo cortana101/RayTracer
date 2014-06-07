@@ -23,6 +23,7 @@
 class Polygon
 {
 public:
+    Polygon();
     Polygon(Triangle startingTriangle);
     Polygon(Vector3D* vertices, int vertexCount, Colour color = Colour(0.0, 0.0, 0.0), double gloss = 0.0);
     
@@ -38,6 +39,9 @@ public:
     bool Intersects(BoundingBox boundingBox);
     
     bool TryGetMinimumBoundingBox(BoundingBox* outBoundingBox);
+    
+    /// Determines if the provided polygon is on the correct side of the provided plane, and also determines if the polygon intersects the plane
+    bool IsOnSideOfPlane(PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, bool *outIntersects);
     
 private:
     Colour startingColour;

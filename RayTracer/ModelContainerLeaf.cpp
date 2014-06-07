@@ -27,17 +27,24 @@
 
 ModelContainerLeaf::ModelContainerLeaf()
 {
-    // Do nothing
+    this->objects = vector<TriangleSplitCosts>();
 }
 
 ModelContainerLeaf::~ModelContainerLeaf()
 {
-    // Do nothing
+    this->objects.clear();
 }
 
-int ModelContainerLeaf::objectCount()
+double ModelContainerLeaf::currentBoundedSurfaceArea()
 {
-    return this->objects.count();
+    double accumulator = 0.0;
+    
+    for (int i = 0; i < this->objects.size(); i++)
+    {
+        accumulator += this->objects[i].containedSurfaceArea;
+    }
+    
+    return accumulator;
 }
 
 ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
@@ -57,24 +64,27 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     }
     
     double candidateSplitPosition;
+
+     TriangleSplitCosts newTriangleCost (newObject, boundingBox);
     
-    if(this->objectCount() > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    if(this->objects.size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
-        QList<Triangle*> posBoundedObjects, negBoundedObjects;
+        vector<TriangleSplitCosts> posBoundedObjects = vector<TriangleSplitCosts>();
+        vector<TriangleSplitCosts> negBoundedObjects = vector<TriangleSplitCosts>();
         
         // We dont actually need to get the bounded objects for this call, just hacking it for now
-        double currentCost = this->GetCost(newObject, boundingBox, &posBoundedObjects);
+        double currentCost = this->GetCost(this->currentBoundedSurfaceArea(), (int)this->objects.size() + 1, boundingBox);
         
         for (int i = 0; i < 3; i++)
         {
-            if (this->TryGetPotentialSplitPosition(planes[i], newObject, boundingBox, currentCost, &candidateSplitPosition, &posBoundedObjects, &negBoundedObjects))
+            if (this->TryGetPotentialSplitPosition(planes[i], newTriangleCost, boundingBox, currentCost, &candidateSplitPosition, &posBoundedObjects, &negBoundedObjects))
             {
                 ModelContainerLeaf* posChild = new ModelContainerLeaf();
                 ModelContainerLeaf* negChild = new ModelContainerLeaf();
                 
                 posChild->objects = posBoundedObjects;
                 negChild->objects = negBoundedObjects;
-                
+
                 ModelContainerPartition* newPartitionNode = new ModelContainerPartition();
                 newPartitionNode->partitionPlane = planes[i];
                 newPartitionNode->partitionPosition = candidateSplitPosition;
@@ -90,7 +100,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     }
     
     // Add the new object to the current node if we havent already decided to split the node
-    this->objects.append(newObject);
+    this->objects.push_back(newTriangleCost);
     return this;
 }
 
@@ -102,36 +112,10 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, BoundingBox
     return this->AddItem(newObject, boundingBox);
 }
 
-double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox, QList<Triangle*> *outBoundedObjects)
+double ModelContainerLeaf::GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox)
 {
-    // The cost of a leaf node is basically the cost of the number of triangles in the leaf
-    // weighed by the probability of hitting any of the triangles
-    double totalSurfaceAreaOfClippedObjects = 0.0;
-    int numberOfContainedObjects = 0;
-    
-    for (int i = 0; i < this->objectCount(); i++)
-    {
-        Polygon objectPolygon (*this->objects[i]);
-        
-        if (this->Intersects(boundingBox, *this->objects[i]))
-        {
-            totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*this->objects[i], boundingBox);
-            numberOfContainedObjects++;
-            outBoundedObjects->append(this->objects[i]);
-        }
-    }
-    
-    Polygon newObjectPolygon (*newObject);
-    
-    if (this->Intersects(boundingBox, *newObject))
-    {
-        totalSurfaceAreaOfClippedObjects += this->GetClippedSurfaceArea(*newObject, boundingBox);
-        numberOfContainedObjects++;
-        outBoundedObjects->append(newObject);
-    }
-    
     // Weigh the chances of hitting one of the objects given the fact that we've already hit the bounding box
-    double weightedChancesOfHit = totalSurfaceAreaOfClippedObjects / boundingBox.SurfaceArea();
+    double weightedChancesOfHit = totalContainedSurfaceArea / boundingBox.SurfaceArea();
 
     if (weightedChancesOfHit < WEIGHTEDCHANCETHRESHOLD)
     {
@@ -141,13 +125,65 @@ double ModelContainerLeaf::GetCost(Triangle* newObject, BoundingBox boundingBox,
     return COSTOFTRAVERSAL + numberOfContainedObjects * COSTOFINTERSECT / weightedChancesOfHit;
 }
 
+double ModelContainerLeaf::GetTotalContainedSurfaceArea(TriangleSplitCosts newObjectCost, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<TriangleSplitCosts> *outChildBoundedObjects)
+{
+    // The cost of a leaf node is basically the cost of the number of triangles in the leaf
+    // weighed by the probability of hitting any of the triangles
+    double totalSurfaceAreaOfClippedObjects = 0.0;
+    int numberOfContainedObjects = 0;
+    bool objectIntersectsPlane = false;
+    
+    outChildBoundedObjects->clear();
+    
+    for (int i = 0; i < this->objects.size(); i++)
+    {
+        if (this->objects[i].clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
+        {
+            if (objectIntersectsPlane)
+            {
+                Polygon childClippedPolygon = this->objects[i].clippedObject.Clip(planeType, planePosition, keepDirection);
+                TriangleSplitCosts childSplitCosts (childClippedPolygon, this->objects[i].referencedTriangle);
+                outChildBoundedObjects->push_back(childSplitCosts);
+                totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
+            }
+            else
+            {
+                totalSurfaceAreaOfClippedObjects += this->objects[i].containedSurfaceArea;
+                outChildBoundedObjects->push_back(this->objects[i]);
+            }
+            
+            numberOfContainedObjects++;
+        }
+    }
+    
+    if (newObjectCost.clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
+    {
+        if (objectIntersectsPlane)
+        {
+            Polygon childClippedPolygon = newObjectCost.clippedObject.Clip(planeType, planePosition, keepDirection);
+            TriangleSplitCosts childSplitCosts (childClippedPolygon, newObjectCost.referencedTriangle);
+            outChildBoundedObjects->push_back(childSplitCosts);
+            totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
+        }
+        else
+        {
+            totalSurfaceAreaOfClippedObjects += newObjectCost.containedSurfaceArea;
+            outChildBoundedObjects->push_back(newObjectCost);
+        }
+        
+        numberOfContainedObjects++;
+    }
+    
+    return totalSurfaceAreaOfClippedObjects;
+}
+
 double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox)
 {
     Polygon objectPolygon = Polygon(object);
     return objectPolygon.Clip(boundingBox).SurfaceArea();
 }
 
-bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, Triangle* newObject, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, QList<Triangle*> *posBoundedObjects, QList<Triangle*> *negBoundedObjects)
+bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, TriangleSplitCosts newObjectCost, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<TriangleSplitCosts> *posBoundedObjects, vector<TriangleSplitCosts> *negBoundedObjects)
 {
     // Binary search the best potential split position until we reach a certain threshold
     double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
@@ -156,11 +192,11 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
     BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
     BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
     
-    *posBoundedObjects = QList<Triangle*>();
-    *negBoundedObjects = QList<Triangle*>();
+    double posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
+    double negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
     
-    double posCost = this->GetCost(newObject, posBound, posBoundedObjects);
-    double negCost = this->GetCost(newObject, negBound, negBoundedObjects);
+    double posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
+    double negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
     
     int splitAttempts = 0;
     
@@ -180,12 +216,12 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
         
         posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
         negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+
+        posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
+        negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(newObjectCost, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
         
-        *posBoundedObjects = QList<Triangle*>();
-        *negBoundedObjects = QList<Triangle*>();
-        
-        posCost = this->GetCost(newObject, posBound, posBoundedObjects);
-        negCost = this->GetCost(newObject, negBound, negBoundedObjects);
+        posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
+        negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
         
         splitAttempts++;
     }
@@ -212,15 +248,15 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     IntersectProperties localIntersectProperties;
     bool hasIntersect = false;
     
-    for (int i = 0; i < this->objectCount(); i++)
+    for (int i = 0; i < this->objects.size(); i++)
     {
-        if (this->objects[i] != ignoredObject && this->objects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
+        if (this->objects[i].referencedTriangle != ignoredObject && this->objects[i].referencedTriangle->ProcessRay(ray, rayOrigin, &localIntersectProperties))
         {
             if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
             {
                 hasIntersect = true;
                 *outIntersectProperties = localIntersectProperties;
-                *outIntersectedModel = this->objects[i];
+                *outIntersectedModel = this->objects[i].referencedTriangle;
             }
         }
     }

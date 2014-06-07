@@ -8,6 +8,11 @@
 
 #include "Polygon.h"
 
+Polygon::Polygon()
+{
+    // Do nothing, this is just for initializing a polygon to empty
+}
+
 Polygon::Polygon(Triangle startingTriangle)
 {
     this->vertices[0] = startingTriangle.p1;
@@ -159,6 +164,54 @@ bool Polygon::Intersects(BoundingBox boundingBox)
     // at each clip, we can get the intersecting vertices and check the intersecting vertices against the other 2 bounds, if its in
     // we can return
     return this->Clip(boundingBox).vertexCount > 2;
+}
+
+bool Polygon::IsOnSideOfPlane(PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, bool *outIntersects)
+{
+    double vertexPositionInPlane;
+    *outIntersects = false;
+    bool hasVertexOnWrongSide = false;
+    bool hasVertexOnRightSide = false;
+    
+    for (int i = 0; i < this->vertexCount; i++)
+    {
+        if (planeType == PartitionPlaneType::X)
+        {
+            vertexPositionInPlane = this->vertices[i].x;
+        }
+        else if (planeType == PartitionPlaneType::Y)
+        {
+            vertexPositionInPlane = this->vertices[i].y;
+        }
+        else
+        {
+            vertexPositionInPlane = this->vertices[i].z;
+        }
+        
+        if ((keepDirection == PartitionKeepDirection::Positive && vertexPositionInPlane < planePosition) ||
+            (keepDirection == PartitionKeepDirection::Negative && vertexPositionInPlane > planePosition))
+        {
+            if (hasVertexOnRightSide)
+            {
+                *outIntersects = true;
+                return true;
+            }
+            
+            hasVertexOnWrongSide = true;
+        }
+        else
+        {
+            if (hasVertexOnWrongSide)
+            {
+                *outIntersects = true;
+                return true;
+            }
+            
+            hasVertexOnRightSide = true;
+        }
+    }
+    
+    return hasVertexOnRightSide;
 }
 
 bool Polygon::TryGetMinimumBoundingBox(BoundingBox* outBoundingBox)
