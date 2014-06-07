@@ -51,3 +51,8 @@ bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelO
     
     return this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
 }
+
+void ModelContainer::ClearCachedSurfaceAreas()
+{
+    this->root->ClearCachedSurfaceAreas();
+}

@@ -27,21 +27,22 @@
 
 ModelContainerLeaf::ModelContainerLeaf()
 {
-    this->objects = vector<TriangleSplitCosts>();
+    this->objects = NULL;
 }
 
 ModelContainerLeaf::~ModelContainerLeaf()
 {
-    this->objects.clear();
+    this->objects->clear();
+    delete this->objects;
 }
 
 double ModelContainerLeaf::currentBoundedSurfaceArea()
 {
     double accumulator = 0.0;
     
-    for (int i = 0; i < this->objects.size(); i++)
+    for (int i = 0; i < this->objects->size(); i++)
     {
-        accumulator += this->objects[i].containedSurfaceArea;
+        accumulator += (*this->objects)[i].containedSurfaceArea;
     }
     
     return accumulator;
@@ -49,6 +50,11 @@ double ModelContainerLeaf::currentBoundedSurfaceArea()
 
 ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
 {
+    if (this->objects == NULL)
+    {
+        this->objects = new vector<TriangleSplitCosts>();
+    }
+    
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
     PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
     planes[0] = longestEdge;
@@ -67,17 +73,17 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
 
      TriangleSplitCosts newTriangleCost (newObject, boundingBox);
     
-    if(this->objects.size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
+    if(this->objects->size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
-        vector<TriangleSplitCosts> posBoundedObjects = vector<TriangleSplitCosts>();
-        vector<TriangleSplitCosts> negBoundedObjects = vector<TriangleSplitCosts>();
+        vector<TriangleSplitCosts> *posBoundedObjects = new vector<TriangleSplitCosts>();
+        vector<TriangleSplitCosts> *negBoundedObjects = new vector<TriangleSplitCosts>();
         
         // We dont actually need to get the bounded objects for this call, just hacking it for now
-        double currentCost = this->GetCost(this->currentBoundedSurfaceArea(), (int)this->objects.size() + 1, boundingBox);
+        double currentCost = this->GetCost(this->currentBoundedSurfaceArea(), (int)this->objects->size() + 1, boundingBox);
         
         for (int i = 0; i < 3; i++)
         {
-            if (this->TryGetPotentialSplitPosition(planes[i], newTriangleCost, boundingBox, currentCost, &candidateSplitPosition, &posBoundedObjects, &negBoundedObjects))
+            if (this->TryGetPotentialSplitPosition(planes[i], newTriangleCost, boundingBox, currentCost, &candidateSplitPosition, posBoundedObjects, negBoundedObjects))
             {
                 ModelContainerLeaf* posChild = new ModelContainerLeaf();
                 ModelContainerLeaf* negChild = new ModelContainerLeaf();
@@ -100,7 +106,7 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
     }
     
     // Add the new object to the current node if we havent already decided to split the node
-    this->objects.push_back(newTriangleCost);
+    this->objects->push_back(newTriangleCost);
     return this;
 }
 
@@ -135,21 +141,21 @@ double ModelContainerLeaf::GetTotalContainedSurfaceArea(TriangleSplitCosts newOb
     
     outChildBoundedObjects->clear();
     
-    for (int i = 0; i < this->objects.size(); i++)
+    for (int i = 0; i < this->objects->size(); i++)
     {
-        if (this->objects[i].clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
+        if ((*this->objects)[i].clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
         {
             if (objectIntersectsPlane)
             {
-                Polygon childClippedPolygon = this->objects[i].clippedObject.Clip(planeType, planePosition, keepDirection);
-                TriangleSplitCosts childSplitCosts (childClippedPolygon, this->objects[i].referencedTriangle);
+                Polygon childClippedPolygon = (*this->objects)[i].clippedObject.Clip(planeType, planePosition, keepDirection);
+                TriangleSplitCosts childSplitCosts (childClippedPolygon, (*this->objects)[i].referencedTriangle);
                 outChildBoundedObjects->push_back(childSplitCosts);
                 totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
             }
             else
             {
-                totalSurfaceAreaOfClippedObjects += this->objects[i].containedSurfaceArea;
-                outChildBoundedObjects->push_back(this->objects[i]);
+                totalSurfaceAreaOfClippedObjects += (*this->objects)[i].containedSurfaceArea;
+                outChildBoundedObjects->push_back((*this->objects)[i]);
             }
             
             numberOfContainedObjects++;
@@ -248,18 +254,29 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     IntersectProperties localIntersectProperties;
     bool hasIntersect = false;
     
-    for (int i = 0; i < this->objects.size(); i++)
+    for (int i = 0; i < this->containedObjects.size(); i++)
     {
-        if (this->objects[i].referencedTriangle != ignoredObject && this->objects[i].referencedTriangle->ProcessRay(ray, rayOrigin, &localIntersectProperties))
+        if (this->containedObjects[i] != ignoredObject && this->containedObjects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
         {
             if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
             {
                 hasIntersect = true;
                 *outIntersectProperties = localIntersectProperties;
-                *outIntersectedModel = this->objects[i].referencedTriangle;
+                *outIntersectedModel = this->containedObjects[i];
             }
         }
     }
     
     return hasIntersect;
+}
+
+void ModelContainerLeaf::ClearCachedSurfaceAreas()
+{
+    for (vector<TriangleSplitCosts>::iterator i = this->objects->begin(); i != this->objects->end(); ++i)
+    {
+        this->containedObjects.push_back(i->referencedTriangle);
+    }
+    
+    this->objects->clear();
+    delete this->objects;
 }

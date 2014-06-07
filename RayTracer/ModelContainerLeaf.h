@@ -41,11 +41,13 @@ class ModelContainerLeaf : public ModelContainerNode
 public:
     ModelContainerLeaf();
     ~ModelContainerLeaf();
-    vector<TriangleSplitCosts> objects;
+    vector<TriangleSplitCosts> *objects;
+    vector<Triangle*> containedObjects;
     double currentBoundedSurfaceArea();
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
+    virtual void ClearCachedSurfaceAreas();
 private:
     /// Gets the current computational cost if we add the new object
     double GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox);

@@ -27,6 +27,8 @@ public:
     bool Intersects(BoundingBox boundingBox, Triangle object);
     
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties) = 0;
+    
+    virtual void ClearCachedSurfaceAreas() = 0;
 };
 
 #endif
