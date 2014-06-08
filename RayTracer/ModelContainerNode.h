@@ -14,6 +14,16 @@
 #include "BoundingBox.h"
 #include "Polygon.h"
 
+struct TreeStatistics
+{
+    double averageTrianglesPerLeaf;
+    int maxTrianglesLeaf;
+    int numberOfLeafs;
+    int maxDepth;
+    double averageDepth;
+    int numberOfEmptyLeafs;
+};
+
 class ModelContainerNode
 {
 public:
@@ -27,6 +37,8 @@ public:
     bool Intersects(BoundingBox boundingBox, Triangle object);
     
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties) = 0;
+    
+    virtual TreeStatistics GetStatistics(int currentDepth) = 0;
 };
 
 #endif

@@ -19,6 +19,7 @@
 #include "Sphere.h"
 #include "PlyFileParser.h"
 #include "ModelContainer.h"
+#include <time.h>
 
 #include "BoundingBox.h"
 #include "Polygon.h"
@@ -44,15 +45,24 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    int modelLength, modelLength2, modelLength3;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
-    ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 30.0, Vector3D(0.0, -1.0, 9.0));
-    ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
+    time_t startTime = time(NULL);
+    
+    int modelLength, modelLength2, modelLength3, modelLength4;
+    //ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
+    ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 10.0, Vector3D(2.0, -1.0, 3.0));
+    //ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
+    
+    ModelObject** dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", &modelLength4, 30.0, Vector3D(-1.5, -2.0, 6.0));
     ModelContainer modelContainer;
     
-    for (int i = 0; i < modelLength; i++)
+    time_t finishedParsing = time(NULL);
+    
+    double parsingSeconds = difftime(finishedParsing, startTime);
+    cout << "Finished parsing model, elapsed time: " << parsingSeconds << "\n";
+    
+    for (int i = 0; i < modelLength4; i++)
     {
-        Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
+        Triangle* model = dynamic_cast<Triangle*>(dragonModel[i]);
         
         if (model != NULL)
         {
@@ -70,15 +80,13 @@ int main(int argc, const char * argv[])
         }
     }
     
-    for (int i = 0; i < modelLength3; i++)
-    {
-        Triangle* model = dynamic_cast<Triangle*>(parsedModel3[i]);
-        
-        if (model != NULL)
-        {
-            modelContainer.AddItem(model);
-        }
-    }
+    time_t finishedBuildingModel = time(NULL);
+   
+    double modelBuildSeconds = difftime(finishedBuildingModel, finishedParsing);
+    
+    cout << "Finished building model, elapsed time: " << modelBuildSeconds << "\n";
+    
+    modelContainer.PrintTreeStatistics();
     
     // Make a light source directly overhead
     LightSource light[4];
@@ -96,9 +104,14 @@ int main(int argc, const char * argv[])
     
     cout << "Rendering...\n";
 
-    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, false).WriteToFile("out.ppm");
+    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, true).WriteToFile("out.ppm");
+    
+    time_t finishedRendering = time(NULL);
     
     cout << "Done\n";
+    
+    double renderingSeconds = difftime(finishedRendering, finishedBuildingModel);
+    cout << "Finished rendering, elapsed time: " << renderingSeconds << "\n";
    
     return 0;
 }

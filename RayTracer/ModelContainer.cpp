@@ -51,3 +51,19 @@ bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelO
     
     return this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
 }
+
+void ModelContainer::PrintTreeStatistics()
+{
+    TreeStatistics statistics = this->root->GetStatistics(1);
+    statistics.averageDepth /= statistics.numberOfLeafs;
+    statistics.averageTrianglesPerLeaf /= statistics.numberOfLeafs;
+    
+    cout << "ModelContainerStatistics: \n";
+    cout << "MaxDepth: " << statistics.maxDepth << "\n";
+    cout << "AverageDepth: " << statistics.averageDepth << "\n";
+    cout << "MaxTrianglesPerNode: " << statistics.maxTrianglesLeaf << "\n";
+    cout << "AverageTrianglesPerNode: " << statistics.averageTrianglesPerLeaf << "\n";
+    cout << "NumberOfLeafs: " << statistics.numberOfLeafs << "\n";
+    cout << "NumberOfEmptyLeafs: " << statistics.numberOfEmptyLeafs << "\n";
+    cout.flush();
+}

@@ -123,3 +123,25 @@ bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3
     
     return foundHitInChild;
 }
+
+TreeStatistics ModelContainerPartition::GetStatistics(int currentDepth)
+{
+    TreeStatistics posChildStatistics = this->posChild->GetStatistics(currentDepth + 1);
+    TreeStatistics negChildStatistics = this->negChild->GetStatistics(currentDepth + 1);
+    
+    TreeStatistics currentStatistics;
+    currentStatistics.maxDepth = std::max(posChildStatistics.maxDepth, negChildStatistics.maxDepth);
+    currentStatistics.numberOfLeafs = posChildStatistics.numberOfLeafs + negChildStatistics.numberOfLeafs;
+    currentStatistics.numberOfEmptyLeafs = posChildStatistics.numberOfEmptyLeafs + negChildStatistics.numberOfEmptyLeafs;
+    currentStatistics.maxTrianglesLeaf = std::max(posChildStatistics.maxTrianglesLeaf, negChildStatistics.maxTrianglesLeaf);
+    
+    // We arent actually using this as the average at this point, at this point we're just using it as an accumulator and count
+    // the total number of triangles in the tree, we will do the average as the final step once we've traversed the whole tree
+    // and have the total number of triangles as well as the total number of leaves
+    currentStatistics.averageTrianglesPerLeaf = posChildStatistics.averageTrianglesPerLeaf + negChildStatistics.averageTrianglesPerLeaf;
+    
+    // Doing the same thing with the average depth
+    currentStatistics.averageDepth = posChildStatistics.averageDepth + negChildStatistics.averageDepth;
+    
+    return currentStatistics;
+}

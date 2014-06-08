@@ -253,3 +253,16 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     
     return hasIntersect;
 }
+
+TreeStatistics ModelContainerLeaf::GetStatistics(int currentDepth)
+{
+    TreeStatistics currentStatistics;
+    currentStatistics.averageTrianglesPerLeaf = (int)this->containedObjects.size();
+    currentStatistics.averageDepth = currentDepth;
+    currentStatistics.maxDepth = currentDepth;
+    currentStatistics.maxTrianglesLeaf = (int)this->containedObjects.size();
+    currentStatistics.numberOfLeafs = 1;
+    currentStatistics.numberOfEmptyLeafs = this->containedObjects.size() == 0 ? 1 : 0;
+    
+    return currentStatistics;
+}
