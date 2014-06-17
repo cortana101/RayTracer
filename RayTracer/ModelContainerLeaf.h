@@ -65,7 +65,6 @@ public:
 private:
     /// Gets the current computational cost if we add the new object
     double GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox);
-    double GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects);
     double GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> partiallyContainedObjects, PartitionPlaneType planeType, double planePosition);
     double GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox);
     bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, vector<TriangleSplitCosts> triangleSplitCosts, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<Triangle*> *posBoundedObjects, vector<Triangle*> *negBoundedObjects);

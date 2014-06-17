@@ -14,14 +14,7 @@
 // The computational cost of calculating traversing 1 more node
 #define COSTOFTRAVERSAL 10
 
-// The threshold of evenness when we are searching for a potential split location
-#define SPLITTHRESHOLD 0.8
-
 #define WEIGHTEDCHANCETHRESHOLD 0.0001
-
-// The max number of attempts to try to split a node such that it satisfies the split threshold
-// if after this many attempts we still cant get to the threshold, just take the split as is
-#define MAXSPLITATTEMPTS 4
 
 #define MINOBJECTSBEFORECONSIDERINGSPLIT 3
 
@@ -159,40 +152,6 @@ double ModelContainerLeaf::GetTotalContainedSurfaceArea(vector<TriangleSplitCost
     }
     
     return containedSurfaceArea;
-}
-
-double ModelContainerLeaf::GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects)
-{
-    // The cost of a leaf node is basically the cost of the number of triangles in the leaf
-    // weighed by the probability of hitting any of the triangles
-    double totalSurfaceAreaOfClippedObjects = 0.0;
-    int numberOfContainedObjects = 0;
-    bool objectIntersectsPlane = false;
-    
-    outChildBoundedObjects->clear();
-    
-    for (vector<TriangleSplitCosts>::iterator i = triangleSplitCosts.begin(); i != triangleSplitCosts.end(); ++i)
-    {
-        if (i->clippedObject.IsOnSideOfPlane(planeType, planePosition, keepDirection, &objectIntersectsPlane))
-        {
-            if (objectIntersectsPlane)
-            {
-                Polygon childClippedPolygon = i->clippedObject.Clip(planeType, planePosition, keepDirection);
-                TriangleSplitCosts childSplitCosts (childClippedPolygon, i->referencedTriangle);
-                outChildBoundedObjects->push_back(childSplitCosts.referencedTriangle);
-                totalSurfaceAreaOfClippedObjects += childSplitCosts.containedSurfaceArea;
-            }
-            else
-            {
-                totalSurfaceAreaOfClippedObjects += i->containedSurfaceArea;
-                outChildBoundedObjects->push_back(i->referencedTriangle);
-            }
-            
-            numberOfContainedObjects++;
-        }
-    }
-    
-    return totalSurfaceAreaOfClippedObjects;
 }
 
 double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox)
