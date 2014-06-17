@@ -49,17 +49,17 @@ int main(int argc, const char * argv[])
     
     int modelLength, modelLength2, modelLength3, modelLength4;
     //ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
-    ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 10.0, Vector3D(1.0, -1.0, 3.0));
+    ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 10.0, Vector3D(-1.5, -1.0, 3.0));
     //ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
     
-    //ModelObject** dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", &modelLength4, 30.0, Vector3D(-1.0, -3.0, 6.0));
+    ModelObject** dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", &modelLength4, 15.0, Vector3D(0.6, -1.5, 3.0));
     ModelContainer modelContainer;
     
     time_t finishedParsing = time(NULL);
     
     double parsingSeconds = difftime(finishedParsing, startTime);
     cout << "Finished parsing model, elapsed time: " << parsingSeconds << "\n";
-    /*
+    
     for (int i = 0; i < modelLength4; i++)
     {
         Triangle* model = dynamic_cast<Triangle*>(dragonModel[i]);
@@ -68,7 +68,7 @@ int main(int argc, const char * argv[])
         {
             modelContainer.AddItem(model);
         }
-    }*/
+    }
     
     for (int i = 0; i < modelLength2; i++)
     {
