@@ -25,7 +25,7 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle *object, BoundingB
     
     // Recursively add the triangle to the child nodes. Note that if the triangle intersects
     // both childs, we add a reference to it in BOTH childs
-   
+    
     if (this->Intersects(posChildBoundingBox, *object))
     {
         this->posChild = this->posChild->AddItem(object, posChildBoundingBox);

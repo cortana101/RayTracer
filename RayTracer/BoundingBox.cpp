@@ -17,7 +17,7 @@ BoundingBox::BoundingBox(Vector3D min, Vector3D max)
         max.y < min.y ||
         max.z < min.z)
     {
-        throw "Please ensure bounding box vectors are added in the correct order";
+        throw NonExistentBoundingBoxException();
     }
 }
 
@@ -26,7 +26,7 @@ BoundingBox::~BoundingBox()
     // Do nothing we have no pointers
 }
 
-BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, float partitionValue, PartitionKeepDirection keepDirection)
+BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection)
 {
     Vector3D localMin = this->min;
     Vector3D localMax = this->max;
@@ -57,6 +57,23 @@ BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, float partition
     } 
     
     return BoundingBox (localMin, localMax);
+}
+
+bool BoundingBox::TryConstrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection, BoundingBox *outBoundingBox)
+{
+    try
+    {
+        *outBoundingBox = this->Constrain(planeType, partitionValue, keepDirection);
+        return true;
+    }
+    catch (NonExistentBoundingBoxException& e)
+    {
+        // In the tryConstrain case, we dont want to fail, we assume the calling method knows how to handle non existent bounding boxes, so
+        // just return null
+        
+        outBoundingBox = NULL;
+        return false;
+    }
 }
 
 BoundingBox BoundingBox::ExpandToContain(BoundingBox targetBoundingBox)

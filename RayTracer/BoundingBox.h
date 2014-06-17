@@ -15,6 +15,14 @@
 #include "Triangle.h"
 #include <math.h>
 
+class NonExistentBoundingBoxException : public exception
+{
+    virtual const char* what() const throw()
+    {
+        return "The bounding box has been constrained out of existence";
+    }
+};
+
 /// Describes an axis-aligned bounding box in 3D space
 class BoundingBox
 {
@@ -22,7 +30,10 @@ public:
     BoundingBox(Vector3D min, Vector3D max);
     ~BoundingBox();
     BoundingBox ExpandToContain(BoundingBox targetBoundingBox);
-    BoundingBox Constrain(PartitionPlaneType planeType, float partitionValue, PartitionKeepDirection keepDirection);
+    BoundingBox Constrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection);
+    // A Safe version of Constrain, will return false/null if the constraints passed in results in a non-existent bounding box, ie it wont
+    // fail when we constrain a bounding box out of existence
+    bool TryConstrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection, BoundingBox *outBoundingBox);
     
     /// Gets the minimum bounding box required to bound the object
     static BoundingBox GetMinimumBoundingBox(Triangle object);

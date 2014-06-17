@@ -67,13 +67,25 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
 
     // Declare a temporary array just for this add calculation
     vector<TriangleSplitCosts> triangleSplitCosts;
+
+    TriangleSplitCosts newTriangleSplitCost(newObject, boundingBox);
+    
+    if (newTriangleSplitCost.containedSurfaceArea == 0)
+    {
+        // Sometimes, if a vertex of a new triangle lies perfectly on the face of the bounding box, and the other vertices as well as the
+        // new triangle itself is in all other senses not contained in the triangle, we will end up in a situation where we will clip out
+        // everything in the triangle and the contained surface area would be zero, in such a case, we consider the triangle to not actually
+        // be contained in this node, we can just return and skip
+        
+        return this;
+    }
+    
+    triangleSplitCosts.push_back(newTriangleSplitCost);
     
     for (vector<Triangle*>::iterator i = this->containedObjects.begin(); i != this->containedObjects.end(); ++i)
     {
         triangleSplitCosts.push_back(TriangleSplitCosts(*i, boundingBox));
     }
-    
-    triangleSplitCosts.push_back(TriangleSplitCosts(newObject, boundingBox));
     
     if(this->containedObjects.size() > MINOBJECTSBEFORECONSIDERINGSPLIT)
     {
@@ -133,6 +145,22 @@ double ModelContainerLeaf::GetCost(double totalContainedSurfaceArea, int numberO
     return COSTOFTRAVERSAL + numberOfContainedObjects * COSTOFINTERSECT / weightedChancesOfHit;
 }
 
+double ModelContainerLeaf::GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> partiallyContainedObjects, PartitionPlaneType planeType, double planePosition)
+{
+    // In this method, we dont have to do an intersect test, because it comes in from the SAH scan, we can already assume that everything
+    // we are passed in the split structure is contained
+    double containedSurfaceArea = 0.0;
+    
+    for (vector<TriangleSplitCosts>::iterator i = partiallyContainedObjects.begin(); i != partiallyContainedObjects.end(); ++i)
+    {
+        // Since we are doing an ascending scan, we can always assume that the keep direction is negative
+        Polygon childClippedPolygon = i->clippedObject.Clip(planeType, planePosition, PartitionKeepDirection::Negative);
+        containedSurfaceArea += childClippedPolygon.SurfaceArea();
+    }
+    
+    return containedSurfaceArea;
+}
+
 double ModelContainerLeaf::GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects)
 {
     // The cost of a leaf node is basically the cost of the number of triangles in the leaf
@@ -175,56 +203,101 @@ double ModelContainerLeaf::GetClippedSurfaceArea(Triangle object, BoundingBox bo
 
 bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, vector<TriangleSplitCosts> triangleSplitCosts, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<Triangle*> *posBoundedObjects, vector<Triangle*> *negBoundedObjects)
 {
-    // Binary search the best potential split position until we reach a certain threshold
-    double searchLength = currentBoundingBox.GetLength(candidatePlane) / 2;
-    double candidateSplitPosition = currentBoundingBox.GetMinInAxis(candidatePlane) + searchLength;
+    vector<SplitStructureNode> splitStructure = this->GetSplitStructureInAxis(triangleSplitCosts, candidatePlane);
     
-    BoundingBox posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
-    BoundingBox negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
+    vector<TriangleSplitCosts> objectsIntersectingPlane;
+    double totalSurfaceArea = 0.0;
     
-    double posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
-    double negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
-    
-    double posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
-    double negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
-    
-    int splitAttempts = 0;
-    
-    while ((posCost > negCost ? negCost / posCost : posCost / negCost) < SPLITTHRESHOLD && splitAttempts < MAXSPLITATTEMPTS)
+    for (vector<TriangleSplitCosts>::iterator i = triangleSplitCosts.begin(); i != triangleSplitCosts.end(); ++i)
     {
-        // Do a binary search
-        searchLength /= 2;
+        totalSurfaceArea += i->containedSurfaceArea;
+    }
+    
+    // Initialize both costs to be the same, it can only get better from here.
+    double posCost = noSplitCost;
+    double negCost = noSplitCost;
+    double bestPosCost = posCost;
+    double bestNegCost = negCost;
+    double bestSplitPositionIndex = 0;
+    
+    // Keep a separate accumulator of the already calculated surface areas so we dont need to recalculate it all the time
+    double whollyContainedSurfaceAreas = 0.0;
+    int negBoundedObjectCount = 0;
+
+    for (int i = 0; i < splitStructure.size(); i++)
+    {
+        double partiallContainedSurfaceAreas = this->GetTotalContainedSurfaceArea(objectsIntersectingPlane, candidatePlane, splitStructure[i].positionInAxis);
+        double containedSurfaceArea = partiallContainedSurfaceAreas + whollyContainedSurfaceAreas;
+      
+        BoundingBox posChildBoundingBox (Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+        BoundingBox negChildBoundingBox (Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
         
-        if (posCost > negCost)
+        // Sometimes, due to the way we clip triangles, there may be tiny rounding off errors such that the split position may be very slightly
+        // outside of the current bounding box, this results in the bounding box being constrained out of existence, for the purposes of SAH calculations
+        // this isn't invalid, though it wont ever be a good split because it is effectively the same as not splitting, so we can safely just ignore it
+        // to save some time
+        if (currentBoundingBox.TryConstrain(candidatePlane, splitStructure[i].positionInAxis, PartitionKeepDirection::Positive, &posChildBoundingBox) &&
+            currentBoundingBox.TryConstrain(candidatePlane, splitStructure[i].positionInAxis, PartitionKeepDirection::Negative, &negChildBoundingBox))
         {
-            candidateSplitPosition += searchLength;
+            posCost = this->GetCost(totalSurfaceArea - containedSurfaceArea, (int)triangleSplitCosts.size() - negBoundedObjectCount, posChildBoundingBox);
+            negCost = this->GetCost(containedSurfaceArea, negBoundedObjectCount + (int)objectsIntersectingPlane.size(), negChildBoundingBox);
+            
+            posCost *= posChildBoundingBox.SurfaceArea() / currentBoundingBox.SurfaceArea();
+            negCost *= negChildBoundingBox.SurfaceArea() / currentBoundingBox.SurfaceArea();
+            
+            if ((posCost + negCost) < (bestPosCost + bestNegCost))
+            {
+                bestPosCost = posCost;
+                bestNegCost = negCost;
+                bestSplitPositionIndex = i;
+            }
+        }
+
+        if (splitStructure[i].positionType == SplitStructureNodeType::min)
+        {
+            // We're entering the bounds of a triangle
+            
+            objectsIntersectingPlane.push_back(splitStructure[i].referencedObject);
         }
         else
         {
-            candidateSplitPosition -= searchLength;
+            whollyContainedSurfaceAreas += splitStructure[i].referencedObject.containedSurfaceArea;
+            negBoundedObjectCount++;
+            
+            // We're leaving a triangle, so get it off the list of objects intersecting the split plane
+            for (vector<TriangleSplitCosts>::iterator j = objectsIntersectingPlane.begin(); j != objectsIntersectingPlane.end(); ++j)
+            {
+                if (splitStructure[i].referencedObject.referencedTriangle == j->referencedTriangle)
+                {
+                    objectsIntersectingPlane.erase(j);
+                    break;
+                }
+            }
+        }
+    }
+    
+    if ((bestPosCost + 	bestNegCost) < noSplitCost)
+    {
+        *outCandidateSplitPosition = splitStructure[bestSplitPositionIndex].positionInAxis;
+        negBoundedObjects->clear();
+        posBoundedObjects->clear();
+        
+        for (int i = 0; i < bestSplitPositionIndex; i++)
+        {
+            if (splitStructure[i].positionType == SplitStructureNodeType::min)
+            {
+                negBoundedObjects->push_back(splitStructure[i].referencedObject.referencedTriangle);
+            }
         }
         
-        posBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive);
-        negBound = currentBoundingBox.Constrain(candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative);
-
-        posBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Positive, posBoundedObjects);
-        negBoundedSurfaceArea = this->GetTotalContainedSurfaceArea(triangleSplitCosts, candidatePlane, candidateSplitPosition, PartitionKeepDirection::Negative, negBoundedObjects);
+        for (int i = ((int)splitStructure.size() - 1); i > bestSplitPositionIndex; i--)
+        {
+            if (splitStructure[i].positionType == SplitStructureNodeType::max)
+            {
+                posBoundedObjects->push_back(splitStructure[i].referencedObject.referencedTriangle);
+            }
+        }
         
-        posCost = this->GetCost(posBoundedSurfaceArea, (int)posBoundedObjects->size(), posBound);
-        negCost = this->GetCost(negBoundedSurfaceArea, (int)negBoundedObjects->size(), negBound);
-        
-        splitAttempts++;
-    }
-
-    double currentBoundingboxSurfaceArea = currentBoundingBox.SurfaceArea();
-   
-    // This is the total cost of doing a split
-    double splitCost = COSTOFTRAVERSAL + posBound.SurfaceArea() * posCost / currentBoundingboxSurfaceArea + negBound.SurfaceArea() * negCost / currentBoundingboxSurfaceArea;
-
-    // If its cheaper not to split, then we shouldnt split
-    if (splitCost < noSplitCost)
-    {
-        *outCandidateSplitPosition = candidateSplitPosition;
         return true;
     }
     else
@@ -252,6 +325,51 @@ bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D ray
     }
     
     return hasIntersect;
+}
+
+vector<SplitStructureNode> ModelContainerLeaf::GetSplitStructureInAxis(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType axis)
+{
+    vector<SplitStructureNode> splitStructure;
+    BoundingBox objectBoundingBox (Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0));
+    
+    for (vector<TriangleSplitCosts>::iterator i = triangleSplitCosts.begin(); i != triangleSplitCosts.end(); ++i)
+    {
+        double positionInAxisMin, positionInAxisMax;
+        
+        if (i->clippedObject.TryGetMinimumBoundingBox(&objectBoundingBox))
+        {
+            if (axis == PartitionPlaneType::X)
+            {
+                positionInAxisMin = objectBoundingBox.min.x;
+                positionInAxisMax = objectBoundingBox.max.x;
+            }
+            else if (axis == PartitionPlaneType::Y)
+            {
+                positionInAxisMin = objectBoundingBox.min.y;
+                positionInAxisMax = objectBoundingBox.max.y;
+            }
+            else
+            {
+                positionInAxisMin = objectBoundingBox.min.z;
+                positionInAxisMax = objectBoundingBox.max.z;
+            }
+            
+            SplitStructureNode minStructureNode = SplitStructureNode { *i, positionInAxisMin, SplitStructureNodeType::min };
+            SplitStructureNode maxStructureNode = SplitStructureNode { *i, positionInAxisMax, SplitStructureNodeType::max };
+            
+            splitStructure.push_back(minStructureNode);
+            splitStructure.push_back(maxStructureNode);
+        }
+    }
+    
+    std:sort(splitStructure.begin(), splitStructure.end(), SplitPositionNodeComparator);
+    
+    return splitStructure;
+}
+
+bool ModelContainerLeaf::SplitPositionNodeComparator(SplitStructureNode node1, SplitStructureNode node2)
+{
+    return node1.positionInAxis < node2.positionInAxis;
 }
 
 TreeStatistics ModelContainerLeaf::GetStatistics(int currentDepth)

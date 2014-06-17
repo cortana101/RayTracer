@@ -17,6 +17,12 @@
 #include <QtCore/QList>
 #include <vector>
 
+enum SplitStructureNodeType
+{
+    min,
+    max,
+};
+
 struct TriangleSplitCosts
 {
     Polygon clippedObject;
@@ -27,13 +33,22 @@ struct TriangleSplitCosts
     TriangleSplitCosts(Triangle* object, BoundingBox boundingBox) : clippedObject(Polygon(*object))
     {
         referencedTriangle = object;
-        containedSurfaceArea = clippedObject.Clip(boundingBox).SurfaceArea();
+        clippedObject = clippedObject.Clip(boundingBox);
+        containedSurfaceArea = clippedObject.SurfaceArea();
     }
     TriangleSplitCosts(Polygon preClippedObject, Triangle* referencedObject) : clippedObject(preClippedObject)
     {
         referencedTriangle = referencedObject;
         containedSurfaceArea = preClippedObject.SurfaceArea();
     }
+};
+
+// A wrapper for the triangle split costs that is used for efficiently calculating SAH
+struct SplitStructureNode
+{
+    TriangleSplitCosts referencedObject;
+    double positionInAxis;
+    SplitStructureNodeType positionType;
 };
 
 class ModelContainerLeaf : public ModelContainerNode
@@ -51,8 +66,13 @@ private:
     /// Gets the current computational cost if we add the new object
     double GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox);
     double GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType planeType, double planePosition, PartitionKeepDirection keepDirection, vector<Triangle*> *outChildBoundedObjects);
+    double GetTotalContainedSurfaceArea(vector<TriangleSplitCosts> partiallyContainedObjects, PartitionPlaneType planeType, double planePosition);
     double GetClippedSurfaceArea(Triangle object, BoundingBox boundingBox);
     bool TryGetPotentialSplitPosition(PartitionPlaneType candidatePlane, vector<TriangleSplitCosts> triangleSplitCosts, BoundingBox currentBoundingBox, double noSplitCost, double* outCandidateSplitPosition, vector<Triangle*> *posBoundedObjects, vector<Triangle*> *negBoundedObjects);
+    /// Takes all of the objects in the current node, and builds a sorted list of objects sorted on their bounding box extremes in the provided axes,
+    /// is used as the core part of the SAH calculation.
+    vector<SplitStructureNode> GetSplitStructureInAxis(vector<TriangleSplitCosts> triangleSplitCosts, PartitionPlaneType axis);
+    static bool SplitPositionNodeComparator(SplitStructureNode node1, SplitStructureNode node2);
 };
 
 #endif /* defined(__RayTracer__ModelContainerLeaf__) */
