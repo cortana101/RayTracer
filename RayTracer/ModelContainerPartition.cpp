@@ -76,7 +76,7 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
     return this;
 }
 
-bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
+bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNodesVisited, int *outNumTrianglesVisited)
 {
     double raySearchPositionInPartitionPlane = 0.0;
     
@@ -99,27 +99,34 @@ bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3
     BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
     
     Vector3D newRaySearchPosition;
+    int numNodesVisitedInPosChild = 0;
+    int numNodesVisitedInNegChild = 0;
+    int numTrianglesVisitedInPosChild = 0;
+    int numTrianglesVisitedInNegChild = 0;
     
     if (raySearchPositionInPartitionPlane > this->partitionPosition)
     {
-        foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, raySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, raySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisitedInPosChild, &numTrianglesVisitedInPosChild);
         
         // See if the ray intersects the positive side of negChild's bounding box
         if (!foundHitInChild && negChildBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, this->partitionPlane, PartitionKeepDirection::Positive, &newRaySearchPosition))
         {
-            foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, newRaySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+            foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, newRaySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisitedInNegChild, &numTrianglesVisitedInNegChild);
         }
     }
     else
     {
-        foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, raySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+        foundHitInChild = this->negChild->TraceRay(ray, rayOrigin, raySearchPosition, negChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisitedInNegChild, &numTrianglesVisitedInNegChild);
         
         // See if the ray intersects the negative side of posChild's bounding box
         if (!foundHitInChild && posChildBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, this->partitionPlane, PartitionKeepDirection::Negative, &newRaySearchPosition))
         {
-            foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, newRaySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+            foundHitInChild = this->posChild->TraceRay(ray, rayOrigin, newRaySearchPosition, posChildBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisitedInPosChild, &numTrianglesVisitedInPosChild);
         }
     }
+    
+    *outNodesVisited = numNodesVisitedInPosChild + numNodesVisitedInNegChild + 1; // Plus one for the current node
+    *outNumTrianglesVisited = numTrianglesVisitedInPosChild + numTrianglesVisitedInNegChild;
     
     return foundHitInChild;
 }

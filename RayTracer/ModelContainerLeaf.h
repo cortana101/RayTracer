@@ -60,7 +60,7 @@ public:
     double CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
     virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
-    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
+    virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNodesVisited, int *outNumTrianglesVisited);
     virtual TreeStatistics GetStatistics(int currentDepth);
 private:
     /// Gets the current computational cost if we add the new object

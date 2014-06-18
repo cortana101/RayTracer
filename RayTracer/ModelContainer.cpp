@@ -8,10 +8,13 @@
 
 #include "ModelContainer.h"
 
+TraceStatistics ModelContainer::traceStatistics;
+
 ModelContainer::ModelContainer()
 {
     // Start with an empty leaf node
     this->root = new ModelContainerLeaf();
+    traceStatistics = TraceStatistics { 0, 0, 0, 0, 0 };
 }
 
 ModelContainer::~ModelContainer()
@@ -49,7 +52,19 @@ bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelO
         rayHitsGlobalBoundingBox = this->globalBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
     }
     
-    return this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties);
+    int numNodesVisited, numTrianglesVisited;
+    
+    bool rayIntersectsSomething = this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisited, &numTrianglesVisited);
+    
+    traceStatistics.numberOfRaysProcessed += 1;
+    traceStatistics.maxNumOfNodesVisited = std::max(traceStatistics.maxNumOfNodesVisited, numNodesVisited);
+    traceStatistics.maxNumOfTrianglesVisited = std::max(traceStatistics.maxNumOfTrianglesVisited, numTrianglesVisited);
+    
+    // For the averages, use these as accumulators first, we will do the final averaging when we print out the results
+    traceStatistics.averageNumOfNodesVisited += numNodesVisited;
+    traceStatistics.averageNumOfTrianglesVisited += numTrianglesVisited;
+    
+    return rayIntersectsSomething;
 }
 
 void ModelContainer::PrintTreeStatistics()
@@ -65,5 +80,19 @@ void ModelContainer::PrintTreeStatistics()
     cout << "AverageTrianglesPerNode: " << statistics.averageTrianglesPerLeaf << "\n";
     cout << "NumberOfLeafs: " << statistics.numberOfLeafs << "\n";
     cout << "NumberOfEmptyLeafs: " << statistics.numberOfEmptyLeafs << "\n";
+    cout.flush();
+}
+
+void ModelContainer::PrintTraceStatistics()
+{
+    traceStatistics.averageNumOfNodesVisited /= traceStatistics.numberOfRaysProcessed;
+    traceStatistics.averageNumOfTrianglesVisited /= traceStatistics.numberOfRaysProcessed;
+    
+    cout << "ModelTraceStatistics: \n";
+    cout << "Number of rays processed: " << traceStatistics.numberOfRaysProcessed << "\n";
+    cout << "Max nodes visited: " << traceStatistics.maxNumOfNodesVisited << "\n";
+    cout << "Average nodes visited: " << traceStatistics.averageNumOfNodesVisited << "\n";
+    cout << "Max triangles visited: " << traceStatistics.maxNumOfTrianglesVisited << "\n";
+    cout << "Average triangles visited: " << traceStatistics.averageNumOfTrianglesVisited << "\n";
     cout.flush();
 }

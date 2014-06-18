@@ -265,23 +265,32 @@ bool ModelContainerLeaf::TryGetPotentialSplitPosition(PartitionPlaneType candida
     }
 }
 
-bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties)
+bool ModelContainerLeaf::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNumNodesVisited, int *outNumTrianglesVisited)
 {
     IntersectProperties localIntersectProperties;
     bool hasIntersect = false;
     
+    *outNumTrianglesVisited = 0;
+    
     for (int i = 0; i < this->containedObjects.size(); i++)
     {
-        if (this->containedObjects[i] != ignoredObject && this->containedObjects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
+        if (this->containedObjects[i] != ignoredObject)
         {
-            if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
+            (*outNumTrianglesVisited)++;
+            
+            if(this->containedObjects[i]->ProcessRay(ray, rayOrigin, &localIntersectProperties))
             {
-                hasIntersect = true;
-                *outIntersectProperties = localIntersectProperties;
-                *outIntersectedModel = this->containedObjects[i];
+                if (!hasIntersect || localIntersectProperties.intersectPosition.GetMagnitude() < outIntersectProperties->intersectPosition.GetMagnitude())
+                {
+                    hasIntersect = true;
+                    *outIntersectProperties = localIntersectProperties;
+                    *outIntersectedModel = this->containedObjects[i];
+                }
             }
         }
     }
+    
+    *outNumNodesVisited = 1;
     
     return hasIntersect;
 }
