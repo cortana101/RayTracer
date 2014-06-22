@@ -19,8 +19,8 @@
 struct TraceStatistics
 {
     int numberOfRaysProcessed;
-    int averageNumOfNodesVisited;
-    int averageNumOfTrianglesVisited;
+    long averageNumOfNodesVisited;
+    long averageNumOfTrianglesVisited;
     int maxNumOfNodesVisited;
     int maxNumOfTrianglesVisited;
 };

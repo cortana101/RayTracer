@@ -9,10 +9,10 @@
 #include "ModelContainerLeaf.h"
 
 // The computational cost of calculating an intersect
-#define COSTOFINTERSECT 75
+#define COSTOFINTERSECT 250
 
 // The computational cost of calculating traversing 1 more node
-#define COSTOFTRAVERSAL 10
+#define COSTOFTRAVERSAL 80
 
 #define WEIGHTEDCHANCETHRESHOLD 0.0001
 
