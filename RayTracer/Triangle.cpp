@@ -56,13 +56,15 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
     // Compute the cross product to get the normal
     outIntersectProperties->normalizedNormal = oneToTwo.CrossProduct(oneToThree).ToUnitVector();
 
-    double D = outIntersectProperties->normalizedNormal.DotProduct(ray);
-    
-    // Sometimes the normal may be pointing away from the ray just due to how its calculated, thats fine we just need to reverse it
-    if (D < 0.0)
+    // If the normal is in the same general direction as the ray, it means the normal is pointing
+    // away from the viewer, in that case we need to reverse the normal because a lot of other subsequent
+    // calculations depend on the normal pointing towards the viewer
+    if (outIntersectProperties->normalizedNormal.DotProduct(ray) > 0.0)
     {
-        D = -D;
+        outIntersectProperties->normalizedNormal = outIntersectProperties->normalizedNormal.Scale(-1.0);
     }
+    
+    double D = outIntersectProperties->normalizedNormal.DotProduct(ray);
     
     // if Normal . RayDirection = 0, it is parallel so will never hit
     if (D == 0.0)
