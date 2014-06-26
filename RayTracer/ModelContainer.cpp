@@ -22,14 +22,33 @@ ModelContainer::~ModelContainer()
     // Do nothing
 }
 
+void ModelContainer::SetGlobalBoundingBox(ModelObject** modelObjects, int modelObjectLength)
+{
+    if (this->globalBoundingBox == NULL)
+    {
+        Triangle* model = dynamic_cast<Triangle*>(modelObjects[0]);
+        
+        BoundingBox firstBoundingBox = BoundingBox::GetMinimumBoundingBox(*model);
+        
+        this->globalBoundingBox = new BoundingBox(firstBoundingBox.min, firstBoundingBox.max);
+    }
+    
+    for (int i = 0; i < modelObjectLength; i++)
+    {
+        Triangle* model = dynamic_cast<Triangle*>(modelObjects[i]);
+        
+        *this->globalBoundingBox = this->globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(*model));
+    }
+}
+
 void ModelContainer::AddItem(Triangle *newObject)
 {
     // Expand the global bounding box if the new object is outside of it
-    this->globalBoundingBox = this->globalBoundingBox.ExpandToContain(BoundingBox::GetMinimumBoundingBox(*newObject));
+    //*this->globalBoundingBox = this->globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(*newObject));
     
     bool fullyContainedByChild;
     
-    this->root = this->root->AddItem(newObject, this->globalBoundingBox, newObject->GetNominalPosition(), &fullyContainedByChild);
+    this->root = this->root->AddItem(newObject, *this->globalBoundingBox, newObject->GetNominalPosition(), &fullyContainedByChild);
     
     if (!fullyContainedByChild)
     {
@@ -42,19 +61,19 @@ bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelO
     Vector3D initialRaySearchPosition;
     bool rayHitsGlobalBoundingBox = false;
     
-    if (this->globalBoundingBox.Contains(rayOrigin))
+    if (this->globalBoundingBox->Contains(rayOrigin))
     {
         initialRaySearchPosition = rayOrigin;
         rayHitsGlobalBoundingBox = true;
     }
     else
     {
-        rayHitsGlobalBoundingBox = this->globalBoundingBox.TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
+        rayHitsGlobalBoundingBox = this->globalBoundingBox->TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
     }
     
     int numNodesVisited, numTrianglesVisited;
     
-    bool rayIntersectsSomething = this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisited, &numTrianglesVisited);
+    bool rayIntersectsSomething = this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, *this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisited, &numTrianglesVisited);
     
     traceStatistics.numberOfRaysProcessed += 1;
     traceStatistics.maxNumOfNodesVisited = std::max(traceStatistics.maxNumOfNodesVisited, numNodesVisited);

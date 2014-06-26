@@ -72,6 +72,10 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
     {
         *outFullyContainedByNode = boundingBox.Contains(*object);
     }
+    else
+    {
+        *outFullyContainedByNode = true;
+    }
     
     return this;
 }

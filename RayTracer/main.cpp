@@ -66,6 +66,9 @@ int main(int argc, const char * argv[])
     
     double parsingSeconds = difftime(finishedParsing, startTime);
     cout << "Finished parsing model, elapsed time: " << parsingSeconds << "\n";
+   
+    modelContainer.SetGlobalBoundingBox(dragonModel, modelLength4);
+    modelContainer.SetGlobalBoundingBox(parsedModel2, modelLength2);
     
     for (int i = 0; i < modelLength4; i++)
     {
