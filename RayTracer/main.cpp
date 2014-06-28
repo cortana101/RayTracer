@@ -31,6 +31,7 @@
 using namespace std;
 
 OutputRasterizer* writeSample();
+vector<Triangle*> concatToModelVector(vector<Triangle*> existingModel, ModelObject** model, int modelLength);
 
 // Features remaining:
 //      Diffusion
@@ -70,24 +71,19 @@ int main(int argc, const char * argv[])
     modelContainer.SetGlobalBoundingBox(dragonModel, modelLength4);
     modelContainer.SetGlobalBoundingBox(parsedModel2, modelLength2);
     
-    for (int i = 0; i < modelLength4; i++)
-    {
-        Triangle* model = dynamic_cast<Triangle*>(dragonModel[i]);
-        
-        if (model != NULL)
-        {
-            modelContainer.AddItem(model);
-        }
-    }
+    vector<Triangle*> modelAccumulator;
     
-    for (int i = 0; i < modelLength2; i++)
+    modelAccumulator = concatToModelVector(modelAccumulator, dragonModel, modelLength4);
+    modelAccumulator = concatToModelVector(modelAccumulator, parsedModel2, modelLength2);
+    
+    std::random_shuffle(modelAccumulator.begin(), modelAccumulator.end());
+    
+    int counter = 0;
+    
+    for (vector<Triangle*>::iterator i = modelAccumulator.begin(); i != modelAccumulator.end(); ++i)
     {
-        Triangle* model = dynamic_cast<Triangle*>(parsedModel2[i]);
-        
-        if (model != NULL)
-        {
-            modelContainer.AddItem(model);
-        }
+        modelContainer.AddItem(*i);
+        counter++;
     }
     
     time_t finishedBuildingModel = time(NULL);
@@ -128,6 +124,21 @@ int main(int argc, const char * argv[])
     return 0;
 }
 
+// Adds the specified model to a model accumulator
+vector<Triangle*> concatToModelVector(vector<Triangle*> existingModel, ModelObject** model, int modelLength)
+{
+    for (int i = 0; i < modelLength; i++)
+    {
+        Triangle* triangleModel = dynamic_cast<Triangle*>(model[i]);
+        
+        if (triangleModel != NULL)
+        {
+            existingModel.push_back(triangleModel);
+        }
+    }
+    
+    return existingModel;
+}
 
 OutputRasterizer* writeSample()
 {
