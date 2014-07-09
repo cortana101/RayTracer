@@ -58,8 +58,8 @@ public:
     ~ModelContainerLeaf();
     vector<Triangle*> containedObjects;
     double CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> triangleSplitCosts);
-    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox);
-    virtual ModelContainerNode* AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode);
+    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode);
+    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode);
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNodesVisited, int *outNumTrianglesVisited);
     virtual TreeStatistics GetStatistics(int currentDepth);
 private:

@@ -40,8 +40,10 @@ double ModelContainerLeaf::CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> 
     return accumulator;
 }
 
-ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox boundingBox)
+bool ModelContainerLeaf::TryAddItem(Triangle *newObject, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode)
 {
+    // This is when we need to check the mutex array, and immediate return false if we are occupied
+    
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
     PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
     planes[0] = longestEdge;
@@ -70,7 +72,8 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
         // everything in the triangle and the contained surface area would be zero, in such a case, we consider the triangle to not actually
         // be contained in this node, we can just return and skip
         
-        return this;
+        *outUpdatedNode = this;
+        return true;
     }
     
     triangleSplitCosts.push_back(newTriangleSplitCost);
@@ -107,22 +110,25 @@ ModelContainerNode* ModelContainerLeaf::AddItem(Triangle *newObject, BoundingBox
                 // After we add everything to the new node, we can delete the current node, because it is being replaced by the new partition node
                 delete this;
                 
-                return newPartitionNode;
+                // HACK: Return true for now while we are pending addition of threading code
+                *outUpdatedNode = newPartitionNode;
+                return true;
             }
         }
     }
     
     // Add the new object to the current node if we havent already decided to split the node
     this->containedObjects.push_back(newObject);
-    return this;
+    *outUpdatedNode = this;
+    return true;
 }
 
-ModelContainerNode* ModelContainerLeaf::AddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode)
+bool ModelContainerLeaf::TryAddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
 {
     // At the leaf node we dont really care about the nominal position anymore, we are now in the right place anyways
     
     *outFullyContainedByNode = boundingBox.Contains(*newObject);
-    return this->AddItem(newObject, boundingBox);
+    return this->TryAddItem(newObject, boundingBox, outUpdatedNode);
 }
 
 double ModelContainerLeaf::GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox)

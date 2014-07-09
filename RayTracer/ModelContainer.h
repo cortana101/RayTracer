@@ -40,7 +40,7 @@ private:
     // Describes the bounding box for everything in the model, starts as an empty box since nothing is in the model until we add stuff
     BoundingBox* globalBoundingBox = NULL;
     static TraceStatistics traceStatistics;
-    void AddItem(Triangle *newObject);
+    void AddItemThread(Triangle *newObject);
     void SetGlobalBoundingBox(vector<Triangle*> model);
 };
 

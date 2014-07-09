@@ -18,7 +18,7 @@ ModelContainerPartition::~ModelContainerPartition()
     // Do nothing
 }
 
-ModelContainerNode* ModelContainerPartition::AddItem(Triangle *object, BoundingBox boundingBox)
+bool ModelContainerPartition::TryAddItem(Triangle *object, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode)
 {
     BoundingBox posChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Positive);
     BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
@@ -28,18 +28,19 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle *object, BoundingB
     
     if (this->Intersects(posChildBoundingBox, *object))
     {
-        this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
+        this->posChild = this->AddItemWithWait(object, this->posChild, posChildBoundingBox);
     }
     
     if (this->Intersects(negChildBoundingBox, *object))
     {
-        this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
+        this->negChild = this->AddItemWithWait(object, this->negChild, negChildBoundingBox);
     }
     
-    return this;
+    *outUpdatedNode = this;
+    return true;
 }
 
-ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode)
+bool ModelContainerPartition::TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
 {
     // Ideally we would use a nominal position to avoid having to calculate intersects all the way down the tree
     // calculating intersects is relatively expensive, calculating intersect using a nominal position is much cheaper
@@ -51,20 +52,20 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
    
     if (posChildBoundingBox.Contains(nominalPosition))
     {
-        this->posChild = this->posChild->AddItem(object, posChildBoundingBox, nominalPosition, &fullyContainedByChild);
+        this->posChild = this->AddItemWithWait(object, this->posChild, nominalPosition, posChildBoundingBox, &fullyContainedByChild);
         
         if (!fullyContainedByChild && this->Intersects(negChildBoundingBox, *object))
         {
-            this->negChild = this->negChild->AddItem(object, negChildBoundingBox);
+            this->negChild = this->AddItemWithWait(object, this->negChild, negChildBoundingBox);
         }
     }
     else
     {
-        this->negChild = this->negChild->AddItem(object, negChildBoundingBox, nominalPosition, &fullyContainedByChild);
+        this->negChild = this->AddItemWithWait(object, this->negChild, nominalPosition, negChildBoundingBox, &fullyContainedByChild);
         
         if (!fullyContainedByChild && this->Intersects(posChildBoundingBox, *object))
         {
-            this->posChild = this->posChild->AddItem(object, posChildBoundingBox);
+            this->posChild = this->AddItemWithWait(object, this->posChild, posChildBoundingBox);
         }
     }
     
@@ -77,7 +78,8 @@ ModelContainerNode* ModelContainerPartition::AddItem(Triangle* object, BoundingB
         *outFullyContainedByNode = true;
     }
     
-    return this;
+    *outUpdatedNode = this;
+    return true;
 }
 
 bool ModelContainerPartition::TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNodesVisited, int *outNumTrianglesVisited)
@@ -156,3 +158,34 @@ TreeStatistics ModelContainerPartition::GetStatistics(int currentDepth)
     
     return currentStatistics;
 }
+
+ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, BoundingBox boundingBox)
+{
+    ModelContainerNode* outUpdatedNode;
+    
+    if (targetNode->TryAddItem(object, boundingBox, &outUpdatedNode))
+    {
+        return outUpdatedNode;
+    }
+    else
+    {
+        // in this case, we basically have to wait for the node to be freed from the locking array and try again
+        // HACK for now to return null until we fully implement threading
+        return NULL;
+    }
+}
+
+ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, Vector3D nominalPosition, BoundingBox boundingBox, bool* outFullyContainedByNode)
+{
+    ModelContainerNode* outUpdatedNode;
+    
+    if (targetNode->TryAddItem(object, boundingBox, nominalPosition, outFullyContainedByNode, &outUpdatedNode))
+    {
+        return outUpdatedNode;
+    }
+    else
+    {
+        // in this case, we basically have to wait for the node to be freed from the locking array and try again
+        return NULL;
+    }
+};

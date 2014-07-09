@@ -41,7 +41,7 @@ vector<Triangle*> PlyFileParser::ParseFile(string fileName, double scale, Vector
     
     bool finishedParsingHeader = false;
     
-    QTextStream qCout (stdout);
+    //QTextStream qCout (stdout);
     
     while (!qFile.atEnd())
     {
@@ -89,8 +89,8 @@ vector<Triangle*> PlyFileParser::ParseFile(string fileName, double scale, Vector
             finishedParsingHeader = true;
         }
         
-        qCout << line;
-        qCout.flush();
+        //qCout << line;
+        //qCout.flush();
     }
     
     qFile.close();
