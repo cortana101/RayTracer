@@ -19,12 +19,12 @@
 QList<Vector3D> PlyFileParser::VertexCache;
 QList<ModelObject*> PlyFileParser::ModelCache;
 
-ModelObject** PlyFileParser::ParseFile(string fileName, int *outModelLength)
+vector<Triangle*> PlyFileParser::ParseFile(string fileName)
 {
-    return ParseFile(fileName, outModelLength, 1.0, Vector3D(0.0, 0.0, 0.0));
+    return ParseFile(fileName, 1.0, Vector3D(0.0, 0.0, 0.0));
 }
 
-ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength, double scale, Vector3D translation)
+vector<Triangle*> PlyFileParser::ParseFile(string fileName, double scale, Vector3D translation)
 {
     VertexCache.clear();
     ModelCache.clear();
@@ -95,7 +95,7 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength, dou
     
     qFile.close();
     
-    return ConvertToArray(ModelCache, outModelLength);
+    return ConvertToVector(ModelCache);
 }
 
 void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo, double scale, Vector3D translation)
@@ -188,16 +188,18 @@ Sphere* PlyFileParser::ParseSphere(QString line)
     return output;
 }
 
-ModelObject** PlyFileParser::ConvertToArray(QList<ModelObject*> modelCache, int* outModelLength)
+vector<Triangle*> PlyFileParser::ConvertToVector(QList<ModelObject*> modelCache)
 {
-    *outModelLength = modelCache.count();
+    int modelLength = modelCache.count();
     
-    ModelObject** modelArray = new ModelObject*[*outModelLength];
+    // Only support triangles at this point, spheres may be added in later
+    vector<Triangle*> modelVector;
     
-    for (int i = 0; i < *outModelLength; i++)
+    for (int i = 0; i < modelLength; i++)
     {
-        modelArray[i] = modelCache.at(i);
+        Triangle* triangleModel = dynamic_cast<Triangle*>(modelCache.at(i));
+        modelVector.push_back(triangleModel);
     }
     
-    return modelArray;
+    return modelVector;
 }

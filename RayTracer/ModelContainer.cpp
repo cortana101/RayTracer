@@ -22,22 +22,33 @@ ModelContainer::~ModelContainer()
     // Do nothing
 }
 
-void ModelContainer::SetGlobalBoundingBox(ModelObject** modelObjects, int modelObjectLength)
+void ModelContainer::BuildTree(vector<Triangle*> model)
+{
+    this->SetGlobalBoundingBox(model);
+    
+    // Randomise the insertion order to get a more balanced tree
+    std::random_shuffle(model.begin(), model.end());
+   
+    for (vector<Triangle*>::iterator i = model.begin(); i != model.end(); ++i)
+    {
+        this->AddItem(*i);
+    }
+}
+
+void ModelContainer::SetGlobalBoundingBox(vector<Triangle*> model)
 {
     if (this->globalBoundingBox == NULL)
     {
-        Triangle* model = dynamic_cast<Triangle*>(modelObjects[0]);
+        Triangle* modelObject = model[0];
         
-        BoundingBox firstBoundingBox = BoundingBox::GetMinimumBoundingBox(*model);
+        BoundingBox firstBoundingBox = BoundingBox::GetMinimumBoundingBox(*modelObject);
         
         this->globalBoundingBox = new BoundingBox(firstBoundingBox.min, firstBoundingBox.max);
     }
     
-    for (int i = 0; i < modelObjectLength; i++)
+    for (vector<Triangle*>::iterator i = model.begin(); i != model.end(); ++i)
     {
-        Triangle* model = dynamic_cast<Triangle*>(modelObjects[i]);
-        
-        *this->globalBoundingBox = this->globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(*model));
+        *this->globalBoundingBox = this->globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(**i));
     }
 }
 

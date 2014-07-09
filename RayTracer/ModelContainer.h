@@ -32,15 +32,16 @@ public:
     ModelContainer();
     ~ModelContainer();
     ModelContainerNode* root;
-    void AddItem(Triangle *newObject);
     bool TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties);
-    void SetGlobalBoundingBox(ModelObject** modelObjects, int modelObjectLength);
+    void BuildTree(vector<Triangle*> model);
     void PrintTreeStatistics();
     void PrintTraceStatistics();
 private:
     // Describes the bounding box for everything in the model, starts as an empty box since nothing is in the model until we add stuff
     BoundingBox* globalBoundingBox = NULL;
     static TraceStatistics traceStatistics;
+    void AddItem(Triangle *newObject);
+    void SetGlobalBoundingBox(vector<Triangle*> model);
 };
 
 #endif /* defined(__RayTracer__ModelContainer__) */

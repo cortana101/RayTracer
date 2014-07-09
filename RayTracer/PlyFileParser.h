@@ -37,8 +37,8 @@ struct ElementInfo
 class PlyFileParser
 {
 public:
-    static ModelObject** ParseFile(string fileName, int* outModelLength);
-    static ModelObject** ParseFile(string fileName, int* outModelLength, double scale, Vector3D translation);
+    static vector<Triangle*> ParseFile(string fileName);
+    static vector<Triangle*> ParseFile(string fileName, double scale, Vector3D translation);
 private:
     static void ParseDataLine(QString line, ElementInfo elementInfo, double scale, Vector3D translation);
 //    static Triangle* ParseTriangle(QString line);
@@ -47,7 +47,7 @@ private:
     static Sphere* ParseSphere(QString line);
     static QList<Vector3D> VertexCache;
     static QList<ModelObject*> ModelCache;
-    static ModelObject** ConvertToArray(QList<ModelObject*> modelCache, int* outModelLength);
+    static vector<Triangle*> ConvertToVector(QList<ModelObject*> modelCache);
 };
 
 #endif /* defined(__RayTracer__PlyFileParser__) */

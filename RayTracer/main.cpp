@@ -55,36 +55,22 @@ int main(int argc, const char * argv[])
     // keeping the precomputed surface areas in a separate array in memory and freeing that as we go.
     // But the main thing is to multithread the construction.
     
-    int modelLength, modelLength2, modelLength3, modelLength4;
     //ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
-    ModelObject** parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength2, 10.0, Vector3D(-1.5, -1.0, 3.0));
+    vector<Triangle*> parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", 10.0, Vector3D(-1.5, -1.0, 3.0));
     //ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
     
-    ModelObject** dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", &modelLength4, 15.0, Vector3D(0.6, -1.5, 3.0));
-    ModelContainer modelContainer;
+    vector<Triangle*> dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", 15.0, Vector3D(0.6, -1.5, 3.0));
     
     time_t finishedParsing = time(NULL);
     
     double parsingSeconds = difftime(finishedParsing, startTime);
     cout << "Finished parsing model, elapsed time: " << parsingSeconds << "\n";
-   
-    modelContainer.SetGlobalBoundingBox(dragonModel, modelLength4);
-    modelContainer.SetGlobalBoundingBox(parsedModel2, modelLength2);
     
-    vector<Triangle*> modelAccumulator;
-    
-    modelAccumulator = concatToModelVector(modelAccumulator, dragonModel, modelLength4);
-    modelAccumulator = concatToModelVector(modelAccumulator, parsedModel2, modelLength2);
-    
-    std::random_shuffle(modelAccumulator.begin(), modelAccumulator.end());
-    
-    int counter = 0;
-    
-    for (vector<Triangle*>::iterator i = modelAccumulator.begin(); i != modelAccumulator.end(); ++i)
-    {
-        modelContainer.AddItem(*i);
-        counter++;
-    }
+    // Add the bunny to the dragon model
+    dragonModel.insert(dragonModel.end(), parsedModel2.begin(), parsedModel2.end());
+
+    ModelContainer modelContainer;
+    modelContainer.BuildTree(dragonModel);
     
     time_t finishedBuildingModel = time(NULL);
    
@@ -122,22 +108,6 @@ int main(int argc, const char * argv[])
     cout << "Finished rendering, elapsed time: " << renderingSeconds << "\n";
    
     return 0;
-}
-
-// Adds the specified model to a model accumulator
-vector<Triangle*> concatToModelVector(vector<Triangle*> existingModel, ModelObject** model, int modelLength)
-{
-    for (int i = 0; i < modelLength; i++)
-    {
-        Triangle* triangleModel = dynamic_cast<Triangle*>(model[i]);
-        
-        if (triangleModel != NULL)
-        {
-            existingModel.push_back(triangleModel);
-        }
-    }
-    
-    return existingModel;
 }
 
 OutputRasterizer* writeSample()
