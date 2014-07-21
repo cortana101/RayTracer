@@ -18,6 +18,7 @@
 		B58CA4E819382AB00011D104 /* Polygon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58CA4E619382AB00011D104 /* Polygon.cpp */; };
 		B5996214193971F3004342C8 /* BoundingBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5996212193971F3004342C8 /* BoundingBox.cpp */; };
 		B59962161939743A004342C8 /* ModelContainerNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B59962151939743A004342C8 /* ModelContainerNode.cpp */; };
+		B5AE110F197CCAB200B282C1 /* ConsoleUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5AE110D197CCAB200B282C1 /* ConsoleUtils.cpp */; };
 		B5B3CD471929864100E09552 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD461929864100E09552 /* main.cpp */; };
 		B5B3CD491929864100E09552 /* RayTracer.1 in Copy Files */ = {isa = PBXBuildFile; fileRef = B5B3CD481929864100E09552 /* RayTracer.1 */; };
 		B5B3CD561929A1A900E09552 /* ppma_io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5B3CD541929A1A900E09552 /* ppma_io.cpp */; };
@@ -90,6 +91,8 @@
 		B5996212193971F3004342C8 /* BoundingBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BoundingBox.cpp; sourceTree = "<group>"; };
 		B5996213193971F3004342C8 /* BoundingBox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BoundingBox.h; sourceTree = "<group>"; };
 		B59962151939743A004342C8 /* ModelContainerNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelContainerNode.cpp; sourceTree = "<group>"; };
+		B5AE110D197CCAB200B282C1 /* ConsoleUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleUtils.cpp; sourceTree = "<group>"; };
+		B5AE110E197CCAB200B282C1 /* ConsoleUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleUtils.h; sourceTree = "<group>"; };
 		B5B3CD431929864100E09552 /* RayTracer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RayTracer; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5B3CD461929864100E09552 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B5B3CD481929864100E09552 /* RayTracer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = RayTracer.1; sourceTree = "<group>"; };
@@ -199,6 +202,8 @@
 				B5CB27F419304F1200725E64 /* Sphere.h */,
 				B5CB27F71930503600725E64 /* ModelObject.h */,
 				B5CB27ED192DAA1900725E64 /* Colour.h */,
+				B5AE110D197CCAB200B282C1 /* ConsoleUtils.cpp */,
+				B5AE110E197CCAB200B282C1 /* ConsoleUtils.h */,
 			);
 			path = RayTracer;
 			sourceTree = "<group>";
@@ -278,6 +283,7 @@
 				B5B3CD641929C7DA00E09552 /* Tracer.cpp in Sources */,
 				B5CB27F519304F1200725E64 /* Sphere.cpp in Sources */,
 				B5B3CD471929864100E09552 /* main.cpp in Sources */,
+				B5AE110F197CCAB200B282C1 /* ConsoleUtils.cpp in Sources */,
 				B5B3CD5B1929A8CD00E09552 /* OutputRasterizer.cpp in Sources */,
 				B58CA4E5193791670011D104 /* ModelContainerPartition.cpp in Sources */,
 				B5CB27EF192E525200725E64 /* Triangle.cpp in Sources */,

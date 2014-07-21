@@ -20,12 +20,7 @@
 #include "ModelObject.h"
 #include "IntersectProperties.h"
 #include "ModelContainer.h"
-
-struct ProgressParams
-{
-    int* pixelProgress;
-    int totalPixelCount;
-};
+#include "ConsoleUtils.h"
 
 struct TraceRayParams
 {
@@ -51,8 +46,6 @@ public:
     /// Performs the actual render of the output buffer
     OutputRasterizer Render(ModelContainer modelContainer, LightSource* lightSources, int lightSourceLength, int viewAngleX, int xSpan, int ySpan, bool useAA = false);
 private:
-    static void* PrintProgress(void* printProgressParams);
-    
     /// Wraps a single TraceRay thread
     static void* TraceRayThread(void* traceRayParams);
 

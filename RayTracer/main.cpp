@@ -48,6 +48,8 @@ int main(int argc, const char * argv[])
 {
     time_t startTime = time(NULL);
     
+    cout << "Parsing model file...\n";
+    
     // TODO: To really understand how our tree improvements are performing, we need a few more metrics:
         // Avg Number of node intersects per traceray
         // Avg number of triangle intersects per traceray
@@ -69,6 +71,7 @@ int main(int argc, const char * argv[])
     // Add the bunny to the dragon model
     dragonModel.insert(dragonModel.end(), parsedModel2.begin(), parsedModel2.end());
 
+    cout << "Building model...\n";
     ModelContainer modelContainer;
     modelContainer.BuildTree(dragonModel);
     

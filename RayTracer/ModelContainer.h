@@ -13,6 +13,7 @@
 #include "ModelObject.h"
 #include "ModelContainerNode.h"
 #include "ModelContainerLeaf.h"
+#include "ConsoleUtils.h"
 
 #define MAXMODELPERNODE 6
 
@@ -25,19 +26,13 @@ struct TraceStatistics
     int maxNumOfTrianglesVisited;
 };
 
-struct AddItemProgressParams
-{
-    int *currentItemIndex;
-    int totalItems;
-};
-
 struct AddItemThreadParams
 {
     pthread_mutex_t *modelRegsiterMutex;
     pthread_mutex_t *modelItemIndexMutex;
     int threadId;
     ModelContainerNode** threadRegister;
-    AddItemProgressParams progress;
+    ProgressParams progress;
     vector<Triangle*> *model;
     ModelContainerNode** root;
     BoundingBox* globalBoundingBox;

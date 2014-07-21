@@ -29,12 +29,14 @@ void ModelContainer::BuildTree(vector<Triangle*> model)
 {
     this->SetGlobalBoundingBox(model);
     
+    ConsoleUtils::StartProgressBar();
+    
     // Randomise the insertion order to get a more balanced tree
     std::random_shuffle(model.begin(), model.end());
    
     // Stores the index of the next node to be added
     int modelProgress = 0;
-    ModelContainerNode* threadRegister[CONCURRENTTHREADS] = { };
+    ModelContainerNode* threadRegister[CONCURRENTTHREADS + 1] = { };
     
     pthread_mutex_t modelRegisterMutex = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t modelItemIndexMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -44,9 +46,9 @@ void ModelContainer::BuildTree(vector<Triangle*> model)
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
     void* status;
     
-    AddItemProgressParams progressParams;
-    progressParams.currentItemIndex = &modelProgress;
-    progressParams.totalItems = (int)model.size();
+    ProgressParams progressParams;
+    progressParams.currentPosition = &modelProgress;
+    progressParams.total = (int)model.size();
     
     for (int i = 0; i < CONCURRENTTHREADS; i++)
     {
@@ -66,9 +68,14 @@ void ModelContainer::BuildTree(vector<Triangle*> model)
         pthread_create(&threads[i], NULL, AddItemThread, (void*)parameters);
     }
     
+    void *(*PrintProgressFunction)(void*);
+    PrintProgressFunction = &ConsoleUtils::PrintProgress;
+    
+    pthread_create(&threads[CONCURRENTTHREADS], NULL, PrintProgressFunction, (void*)&progressParams);
+    
     pthread_attr_destroy(&attr);
     
-    for (int i = 0; i < CONCURRENTTHREADS; i++)
+    for (int i = 0; i < CONCURRENTTHREADS + 1; i++)
     {
         pthread_join(threads[i], &status);
     }
@@ -95,11 +102,11 @@ void* ModelContainer::AddItemThread(void* addItemThreadParams)
 {
     AddItemThreadParams* addItemParameters = (AddItemThreadParams*)addItemThreadParams;
     
-    while(*addItemParameters->progress.currentItemIndex < addItemParameters->progress.totalItems)
+    while(*addItemParameters->progress.currentPosition < addItemParameters->progress.total)
     {
         pthread_mutex_lock(addItemParameters->modelItemIndexMutex);
-        int currentModelIndex = *addItemParameters->progress.currentItemIndex;
-        *addItemParameters->progress.currentItemIndex += 1;
+        int currentModelIndex = *addItemParameters->progress.currentPosition;
+        *addItemParameters->progress.currentPosition += 1;
         pthread_mutex_unlock(addItemParameters->modelItemIndexMutex);
         
         Triangle* objectToAdd = (*addItemParameters->model)[currentModelIndex];
