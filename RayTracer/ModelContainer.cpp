@@ -6,15 +6,18 @@
 //  Copyright (c) 2014 Daniel Shih. All rights reserved.
 //
 
+#include <pthread.h>
 #include "ModelContainer.h"
 
 TraceStatistics ModelContainer::traceStatistics;
+BoundingBox* ModelContainer::globalBoundingBox;
 
 ModelContainer::ModelContainer()
 {
     // Start with an empty leaf node
     this->root = new ModelContainerLeaf();
     traceStatistics = TraceStatistics { 0, 0, 0, 0, 0 };
+    globalBoundingBox = NULL;
 }
 
 ModelContainer::~ModelContainer()
@@ -29,63 +32,100 @@ void ModelContainer::BuildTree(vector<Triangle*> model)
     // Randomise the insertion order to get a more balanced tree
     std::random_shuffle(model.begin(), model.end());
    
+    // Stores the index of the next node to be added
+    int modelProgress = 0;
+    ModelContainerNode* threadRegister[CONCURRENTTHREADS] = { };
     
-    // Here we should try to make the construction of the tree multi-threaded, the basics are simple:
-    //      We should start up 4 threads, and let them take objects off the model queue together
-    //      For each item, the thread will add it as normal, like in the single-threaded model, except that when
-    //          it reaches the leaf node, it will check if that leaf node is being updated by another thread
-    //      It will do this by the following:
-    //          * There will exist an array of node pointers, the length is the number of threads
-    //          * each array position will correspond to a thread
-    //          * this array will be guarded by a mutex
-    //          * the node pointer in that position will point to the node that the thread is currently working on
-    //          * NO thread will be allowed to touch a leaf node unless it first acquires a lock on the array and writes the address of the leaf node in its array position
-    //          * prior to writing the address it will first check the rest of the array and see if that address is already being used by someone else
-    //          * if nobody else is doing stuff with this node, it will write the address to the array and release the lock on the array and begin working on the node
-    //          * if it finds someone else is doing stuff with this node, it will abort the add attempt, and try to add the same item again post abort from the root
-    //          * after it has finished adding the item, it will again attempt to acquire a lock on the array, and write null in its array position so as to release its hold on that node.
-    //          * The add function in modelcontain already returns a pointer to the node, we can pass null through this to signal if the item was added correctly or not
+    pthread_mutex_t modelRegisterMutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t modelItemIndexMutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_t threads[CONCURRENTTHREADS];
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    void* status;
     
-    for (vector<Triangle*>::iterator i = model.begin(); i != model.end(); ++i)
+    AddItemProgressParams progressParams;
+    progressParams.currentItemIndex = &modelProgress;
+    progressParams.totalItems = (int)model.size();
+    
+    for (int i = 0; i < CONCURRENTTHREADS; i++)
     {
-        this->AddItemThread(*i);
+        AddItemThreadParams *parameters = new AddItemThreadParams();
+        parameters->modelRegsiterMutex = &modelRegisterMutex;
+        parameters->modelItemIndexMutex = &modelItemIndexMutex;
+        parameters->threadId = i;
+        parameters->threadRegister = threadRegister;
+        parameters->progress = progressParams;
+        parameters->model = &model;
+        parameters->globalBoundingBox = globalBoundingBox;
+        parameters->root = &this->root;
+        
+        void *(*AddItemThread)(void*);
+        AddItemThread = &ModelContainer::AddItemThread;
+        
+        pthread_create(&threads[i], NULL, AddItemThread, (void*)parameters);
+    }
+    
+    pthread_attr_destroy(&attr);
+    
+    for (int i = 0; i < CONCURRENTTHREADS; i++)
+    {
+        pthread_join(threads[i], &status);
     }
 }
 
 void ModelContainer::SetGlobalBoundingBox(vector<Triangle*> model)
 {
-    if (this->globalBoundingBox == NULL)
+    if (globalBoundingBox == NULL)
     {
         Triangle* modelObject = model[0];
         
         BoundingBox firstBoundingBox = BoundingBox::GetMinimumBoundingBox(*modelObject);
         
-        this->globalBoundingBox = new BoundingBox(firstBoundingBox.min, firstBoundingBox.max);
+        globalBoundingBox = new BoundingBox(firstBoundingBox.min, firstBoundingBox.max);
     }
     
     for (vector<Triangle*>::iterator i = model.begin(); i != model.end(); ++i)
     {
-        *this->globalBoundingBox = this->globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(**i));
+        *globalBoundingBox = globalBoundingBox->ExpandToContain(BoundingBox::GetMinimumBoundingBox(**i));
     }
 }
 
-void ModelContainer::AddItemThread(Triangle *newObject)
+void* ModelContainer::AddItemThread(void* addItemThreadParams)
 {
-    bool fullyContainedByChild;
+    AddItemThreadParams* addItemParameters = (AddItemThreadParams*)addItemThreadParams;
     
-    ModelContainerNode* outUpdatedNode;
-    
-    if(!this->root->TryAddItem(newObject, *this->globalBoundingBox, newObject->GetNominalPosition(), &fullyContainedByChild, &outUpdatedNode))
+    while(*addItemParameters->progress.currentItemIndex < addItemParameters->progress.totalItems)
     {
-        throw "At the root level all additions should work, we should not ever be blocked on threading issues here";
+        pthread_mutex_lock(addItemParameters->modelItemIndexMutex);
+        int currentModelIndex = *addItemParameters->progress.currentItemIndex;
+        *addItemParameters->progress.currentItemIndex += 1;
+        pthread_mutex_unlock(addItemParameters->modelItemIndexMutex);
+        
+        Triangle* objectToAdd = (*addItemParameters->model)[currentModelIndex];
+
+        bool fullyContainedByChild;
+        
+        ModelContainerNode* outUpdatedNode;
+
+        while(!ModelContainerNode::TryLockNode(addItemParameters->modelRegsiterMutex, addItemParameters->threadRegister, addItemParameters->threadId, *addItemParameters->root))
+        {
+            // Loop until we add it, we may want to add a tiny sleep here if it makes a difference
+        }
+        
+        (*addItemParameters->root)->TryAddItem(objectToAdd, *addItemParameters->globalBoundingBox, objectToAdd->GetNominalPosition(), addItemParameters->threadRegister, addItemParameters->threadId, addItemParameters->modelRegsiterMutex, &fullyContainedByChild, &outUpdatedNode);
+
+        *addItemParameters->root = outUpdatedNode;
+        
+        ModelContainerNode::UnlockNode(addItemParameters->modelRegsiterMutex, addItemParameters->threadRegister, addItemParameters->threadId);
+        
+        if (!fullyContainedByChild)
+        {
+            throw "Something is wrong with expansion of our global bounding box, the root should always fully contain any shape we add to the model";
+        }
     }
     
-    this->root = outUpdatedNode;
-    
-    if (!fullyContainedByChild)
-    {
-        throw "Something is wrong with expansion of our global bounding box, the root should always fully contain any shape we add to the model";
-    }
+    pthread_exit(NULL);
 }
 
 bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelObject* ignoredObject, ModelObject **outIntersectedModel, IntersectProperties* outIntersectProperties)
@@ -93,19 +133,19 @@ bool ModelContainer::TryGetIntersection(Vector3D ray, Vector3D rayOrigin, ModelO
     Vector3D initialRaySearchPosition;
     bool rayHitsGlobalBoundingBox = false;
     
-    if (this->globalBoundingBox->Contains(rayOrigin))
+    if (globalBoundingBox->Contains(rayOrigin))
     {
         initialRaySearchPosition = rayOrigin;
         rayHitsGlobalBoundingBox = true;
     }
     else
     {
-        rayHitsGlobalBoundingBox = this->globalBoundingBox->TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
+        rayHitsGlobalBoundingBox = globalBoundingBox->TryGetIntersectionAtSurface(ray, rayOrigin, &initialRaySearchPosition);
     }
     
     int numNodesVisited, numTrianglesVisited;
     
-    bool rayIntersectsSomething = this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, *this->globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisited, &numTrianglesVisited);
+    bool rayIntersectsSomething = this->root->TraceRay(ray, rayOrigin, initialRaySearchPosition, *globalBoundingBox, ignoredObject, outIntersectedModel, outIntersectProperties, &numNodesVisited, &numTrianglesVisited);
     
     traceStatistics.numberOfRaysProcessed += 1;
     traceStatistics.maxNumOfNodesVisited = std::max(traceStatistics.maxNumOfNodesVisited, numNodesVisited);

@@ -40,10 +40,8 @@ double ModelContainerLeaf::CurrentBoundedSurfaceArea(vector<TriangleSplitCosts> 
     return accumulator;
 }
 
-bool ModelContainerLeaf::TryAddItem(Triangle *newObject, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode)
+bool ModelContainerLeaf::TryAddItem(Triangle *newObject, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, ModelContainerNode** outUpdatedNode)
 {
-    // This is when we need to check the mutex array, and immediate return false if we are occupied
-    
     PartitionPlaneType planes[3] = { PartitionPlaneType::X, PartitionPlaneType::Y, PartitionPlaneType::Z };
     PartitionPlaneType longestEdge = boundingBox.GetLongestEdge();
     planes[0] = longestEdge;
@@ -106,12 +104,12 @@ bool ModelContainerLeaf::TryAddItem(Triangle *newObject, BoundingBox boundingBox
                 newPartitionNode->partitionPosition = candidateSplitPosition;
                 newPartitionNode->posChild = posChild;
                 newPartitionNode->negChild = negChild;
+               
+                *outUpdatedNode = newPartitionNode;
                 
                 // After we add everything to the new node, we can delete the current node, because it is being replaced by the new partition node
                 delete this;
                 
-                // HACK: Return true for now while we are pending addition of threading code
-                *outUpdatedNode = newPartitionNode;
                 return true;
             }
         }
@@ -123,12 +121,12 @@ bool ModelContainerLeaf::TryAddItem(Triangle *newObject, BoundingBox boundingBox
     return true;
 }
 
-bool ModelContainerLeaf::TryAddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
+bool ModelContainerLeaf::TryAddItem(Triangle* newObject, BoundingBox boundingBox, Vector3D nominalPosition, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
 {
     // At the leaf node we dont really care about the nominal position anymore, we are now in the right place anyways
     
     *outFullyContainedByNode = boundingBox.Contains(*newObject);
-    return this->TryAddItem(newObject, boundingBox, outUpdatedNode);
+    return this->TryAddItem(newObject, boundingBox, threadRegister, threadId, threadRegisterMutex, outUpdatedNode);
 }
 
 double ModelContainerLeaf::GetCost(double totalContainedSurfaceArea, int numberOfContainedObjects, BoundingBox boundingBox)

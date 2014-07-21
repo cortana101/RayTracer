@@ -25,6 +25,24 @@ struct TraceStatistics
     int maxNumOfTrianglesVisited;
 };
 
+struct AddItemProgressParams
+{
+    int *currentItemIndex;
+    int totalItems;
+};
+
+struct AddItemThreadParams
+{
+    pthread_mutex_t *modelRegsiterMutex;
+    pthread_mutex_t *modelItemIndexMutex;
+    int threadId;
+    ModelContainerNode** threadRegister;
+    AddItemProgressParams progress;
+    vector<Triangle*> *model;
+    ModelContainerNode** root;
+    BoundingBox* globalBoundingBox;
+};
+
 /// Basic k-d tree implementation for partitioning our model space for faster searching by rays
 class ModelContainer
 {
@@ -38,9 +56,9 @@ public:
     void PrintTraceStatistics();
 private:
     // Describes the bounding box for everything in the model, starts as an empty box since nothing is in the model until we add stuff
-    BoundingBox* globalBoundingBox = NULL;
+    static BoundingBox* globalBoundingBox;
     static TraceStatistics traceStatistics;
-    void AddItemThread(Triangle *newObject);
+    static void* AddItemThread(void* addItemThreadParams);
     void SetGlobalBoundingBox(vector<Triangle*> model);
 };
 

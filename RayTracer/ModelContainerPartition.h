@@ -32,9 +32,9 @@ public:
     /// The child on the negative side of the partition plane
     ModelContainerNode* negChild;
     
-    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode);
+    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, ModelContainerNode** outUpdatedNode);
     
-    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode);
+    virtual bool TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode);
     
     virtual bool TraceRay(Vector3D ray, Vector3D rayOrigin, Vector3D raySearchPosition, BoundingBox boundingBox, ModelObject* ignoredObject, ModelObject** outIntersectedModel, IntersectProperties* outIntersectProperties, int *outNodesVisited, int *outNumTrianglesVisited);
     
@@ -43,8 +43,8 @@ private:
     // These are helper functions that basically perform an AddItem, not a TryAddItem, these will guarantee to add the item to the tree, difference
     // being that because of other threads potentially locking on the node we want to update, we may need to try multiple times before we finally make
     // the update while we wait for other threads to finish working with a node
-    ModelContainerNode* AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, BoundingBox boundingBox);
-    ModelContainerNode* AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, Vector3D nominalPosition, BoundingBox boundingBox, bool* outFullyContainedByNode);
+    ModelContainerNode* AddItemWithWait(Triangle* object, ModelContainerNode** targetNode, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex);
+    ModelContainerNode* AddItemWithWait(Triangle* object, ModelContainerNode** targetNode, Vector3D nominalPosition, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, bool* outFullyContainedByNode);
 };
 
 #endif /* defined(__RayTracer__ModelContainerPartition__) */

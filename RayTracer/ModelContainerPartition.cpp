@@ -18,7 +18,7 @@ ModelContainerPartition::~ModelContainerPartition()
     // Do nothing
 }
 
-bool ModelContainerPartition::TryAddItem(Triangle *object, BoundingBox boundingBox, ModelContainerNode** outUpdatedNode)
+bool ModelContainerPartition::TryAddItem(Triangle *object, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, ModelContainerNode** outUpdatedNode)
 {
     BoundingBox posChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Positive);
     BoundingBox negChildBoundingBox = boundingBox.Constrain(this->partitionPlane, this->partitionPosition, PartitionKeepDirection::Negative);
@@ -28,19 +28,21 @@ bool ModelContainerPartition::TryAddItem(Triangle *object, BoundingBox boundingB
     
     if (this->Intersects(posChildBoundingBox, *object))
     {
-        this->posChild = this->AddItemWithWait(object, this->posChild, posChildBoundingBox);
+        this->posChild = this->AddItemWithWait(object, &this->posChild, posChildBoundingBox, threadRegister, threadId, threadRegisterMutex);
     }
     
     if (this->Intersects(negChildBoundingBox, *object))
     {
-        this->negChild = this->AddItemWithWait(object, this->negChild, negChildBoundingBox);
+        this->negChild = this->AddItemWithWait(object, &this->negChild, negChildBoundingBox, threadRegister, threadId, threadRegisterMutex);
     }
+    
+    ModelContainerNode::UnlockNode(threadRegisterMutex, threadRegister, threadId);
     
     *outUpdatedNode = this;
     return true;
 }
 
-bool ModelContainerPartition::TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
+bool ModelContainerPartition::TryAddItem(Triangle* object, BoundingBox boundingBox, Vector3D nominalPosition, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, bool* outFullyContainedByNode, ModelContainerNode** outUpdatedNode)
 {
     // Ideally we would use a nominal position to avoid having to calculate intersects all the way down the tree
     // calculating intersects is relatively expensive, calculating intersect using a nominal position is much cheaper
@@ -52,22 +54,24 @@ bool ModelContainerPartition::TryAddItem(Triangle* object, BoundingBox boundingB
    
     if (posChildBoundingBox.Contains(nominalPosition))
     {
-        this->posChild = this->AddItemWithWait(object, this->posChild, nominalPosition, posChildBoundingBox, &fullyContainedByChild);
+        this->posChild = this->AddItemWithWait(object, &this->posChild, nominalPosition, posChildBoundingBox, threadRegister, threadId, threadRegisterMutex, &fullyContainedByChild);
         
         if (!fullyContainedByChild && this->Intersects(negChildBoundingBox, *object))
         {
-            this->negChild = this->AddItemWithWait(object, this->negChild, negChildBoundingBox);
+            this->negChild = this->AddItemWithWait(object, &this->negChild, negChildBoundingBox, threadRegister, threadId, threadRegisterMutex);
         }
     }
     else
     {
-        this->negChild = this->AddItemWithWait(object, this->negChild, nominalPosition, negChildBoundingBox, &fullyContainedByChild);
+        this->negChild = this->AddItemWithWait(object, &this->negChild, nominalPosition, negChildBoundingBox, threadRegister, threadId, threadRegisterMutex, &fullyContainedByChild);
         
         if (!fullyContainedByChild && this->Intersects(posChildBoundingBox, *object))
         {
-            this->posChild = this->AddItemWithWait(object, this->posChild, posChildBoundingBox);
+            this->posChild = this->AddItemWithWait(object, &this->posChild, posChildBoundingBox, threadRegister, threadId, threadRegisterMutex);
         }
     }
+    
+    ModelContainerNode::UnlockNode(threadRegisterMutex, threadRegister, threadId);
     
     if (!fullyContainedByChild)
     {
@@ -159,33 +163,30 @@ TreeStatistics ModelContainerPartition::GetStatistics(int currentDepth)
     return currentStatistics;
 }
 
-ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, BoundingBox boundingBox)
+ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode** targetNode, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex)
 {
     ModelContainerNode* outUpdatedNode;
     
-    if (targetNode->TryAddItem(object, boundingBox, &outUpdatedNode))
+    while(!ModelContainerNode::TryLockNode(threadRegisterMutex, threadRegister, threadId, *targetNode))
     {
-        return outUpdatedNode;
+        // May want to add a little sleep here, but basially just keep trying until we're able to add it
     }
-    else
-    {
-        // in this case, we basically have to wait for the node to be freed from the locking array and try again
-        // HACK for now to return null until we fully implement threading
-        return NULL;
-    }
+    
+    (*targetNode)->TryAddItem(object, boundingBox, threadRegister, threadId, threadRegisterMutex, &outUpdatedNode);
+    
+    return outUpdatedNode;
 }
 
-ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode* targetNode, Vector3D nominalPosition, BoundingBox boundingBox, bool* outFullyContainedByNode)
+ModelContainerNode* ModelContainerPartition::AddItemWithWait(Triangle* object, ModelContainerNode** targetNode, Vector3D nominalPosition, BoundingBox boundingBox, ModelContainerNode** threadRegister, int threadId, pthread_mutex_t *threadRegisterMutex, bool* outFullyContainedByNode)
 {
     ModelContainerNode* outUpdatedNode;
     
-    if (targetNode->TryAddItem(object, boundingBox, nominalPosition, outFullyContainedByNode, &outUpdatedNode))
+    while(!ModelContainerNode::TryLockNode(threadRegisterMutex, threadRegister, threadId, *targetNode))
     {
-        return outUpdatedNode;
+        // May want to add a little sleep here, but basially just keep trying until we're able to add it
     }
-    else
-    {
-        // in this case, we basically have to wait for the node to be freed from the locking array and try again
-        return NULL;
-    }
+    
+    (*targetNode)->TryAddItem(object, boundingBox, nominalPosition, threadRegister, threadId, threadRegisterMutex, outFullyContainedByNode, &outUpdatedNode);
+
+    return outUpdatedNode;
 };
