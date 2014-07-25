@@ -70,6 +70,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B52B253F1982C3020016EC36 /* dragonAndBunny.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = dragonAndBunny.jpg; sourceTree = "<group>"; };
 		B5671D441932C7A6001E0535 /* PlyFileParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PlyFileParser.cpp; sourceTree = "<group>"; };
 		B5671D451932C7A6001E0535 /* PlyFileParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlyFileParser.h; sourceTree = "<group>"; };
 		B58CA4D019358ED30011D104 /* QtCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtCore.framework; path = ../../../Qt/5.2.1/clang_64/lib/QtCore.framework; sourceTree = "<group>"; };
@@ -131,6 +132,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B52B253E1982C3020016EC36 /* SampleRenders */ = {
+			isa = PBXGroup;
+			children = (
+				B52B253F1982C3020016EC36 /* dragonAndBunny.jpg */,
+			);
+			path = SampleRenders;
+			sourceTree = SOURCE_ROOT;
+		};
 		B58CA4DE19378FC20011D104 /* ModelContainer */ = {
 			isa = PBXGroup;
 			children = (
@@ -171,6 +180,7 @@
 		B5B3CD451929864100E09552 /* RayTracer */ = {
 			isa = PBXGroup;
 			children = (
+				B52B253E1982C3020016EC36 /* SampleRenders */,
 				B58CA4DE19378FC20011D104 /* ModelContainer */,
 				B58CA4DD1936EE3E0011D104 /* arrayOfSpheres.ply */,
 				B58CA4DA1936EE2B0011D104 /* arrayOfTriangles.ply */,

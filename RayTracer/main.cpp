@@ -99,7 +99,7 @@ int main(int argc, const char * argv[])
     
     cout << "Rendering...\n";
 
-    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, false).WriteToFile("out.ppm");
+    tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, true).WriteToFile("out.ppm");
     
     time_t finishedRendering = time(NULL);
     
