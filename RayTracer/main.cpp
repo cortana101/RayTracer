@@ -19,6 +19,7 @@
 #include "Sphere.h"
 #include "PlyFileParser.h"
 #include "ModelContainer.h"
+#include <time.h>
 
 #include "BoundingBox.h"
 #include "Polygon.h"
@@ -30,6 +31,7 @@
 using namespace std;
 
 OutputRasterizer* writeSample();
+vector<Triangle*> concatToModelVector(vector<Triangle*> existingModel, ModelObject** model, int modelLength);
 
 // Features remaining:
 //      Diffusion
@@ -44,19 +46,42 @@ OutputRasterizer* writeSample();
 
 int main(int argc, const char * argv[])
 {
-    int modelLength;
-    ModelObject** parsedModel = PlyFileParser::ParseFile("arrayOfTriangles.ply", &modelLength);
-    ModelContainer modelContainer;
+    time_t startTime = time(NULL);
     
-    for (int i = 0; i < modelLength; i++)
-    {
-        Triangle* model = dynamic_cast<Triangle*>(parsedModel[i]);
-        
-        if (model != NULL)
-        {
-            modelContainer.AddItem(model);
-        }
-    }
+    cout << "Parsing model file...\n";
+    
+    // TODO: To really understand how our tree improvements are performing, we need a few more metrics:
+        // Avg Number of node intersects per traceray
+        // Avg number of triangle intersects per traceray
+    // We also may want to cache the surface areas of triangles in a node between insertions to speed it up, we can handle the memory overhead by
+    // keeping the precomputed surface areas in a separate array in memory and freeing that as we go.
+    // But the main thing is to multithread the construction.
+    
+    //ModelObject** parsedModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", &modelLength, 15.0, Vector3D(-2.0, -2.0, 4.0));
+    vector<Triangle*> parsedModel2 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/bunnyOutput.ply", 10.0, Vector3D(-1.5, -1.0, 3.0));
+    //ModelObject** parsedModel3 = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/arrayOfTrianglesLarge.ply", &modelLength3);
+    
+    vector<Triangle*> dragonModel = PlyFileParser::ParseFile("/Users/cortana101/Library/Developer/Xcode/DerivedData/RayTracer-enlhyosbakvceicrngnnfsyssdwm/Build/Products/Debug/dragonOutput.ply", 15.0, Vector3D(0.6, -1.5, 3.0));
+    
+    time_t finishedParsing = time(NULL);
+    
+    double parsingSeconds = difftime(finishedParsing, startTime);
+    cout << "Finished parsing model, elapsed time: " << parsingSeconds << "\n";
+    
+    // Add the bunny to the dragon model
+    dragonModel.insert(dragonModel.end(), parsedModel2.begin(), parsedModel2.end());
+
+    cout << "Building model...\n";
+    ModelContainer modelContainer;
+    modelContainer.BuildTree(dragonModel);
+    
+    time_t finishedBuildingModel = time(NULL);
+   
+    double modelBuildSeconds = difftime(finishedBuildingModel, finishedParsing);
+    
+    cout << "Finished building model, elapsed time: " << modelBuildSeconds << "\n";
+    
+    modelContainer.PrintTreeStatistics();
     
     // Make a light source directly overhead
     LightSource light[4];
@@ -76,11 +101,17 @@ int main(int argc, const char * argv[])
 
     tracer.Render(modelContainer, light, 4, 90, XSIZE, YSIZE, true).WriteToFile("out.ppm");
     
+    time_t finishedRendering = time(NULL);
+    
     cout << "Done\n";
+    
+    modelContainer.PrintTraceStatistics();
+    
+    double renderingSeconds = difftime(finishedRendering, finishedBuildingModel);
+    cout << "Finished rendering, elapsed time: " << renderingSeconds << "\n";
    
     return 0;
 }
-
 
 OutputRasterizer* writeSample()
 {

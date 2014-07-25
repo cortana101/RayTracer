@@ -19,8 +19,15 @@
 QList<Vector3D> PlyFileParser::VertexCache;
 QList<ModelObject*> PlyFileParser::ModelCache;
 
-ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
+vector<Triangle*> PlyFileParser::ParseFile(string fileName)
 {
+    return ParseFile(fileName, 1.0, Vector3D(0.0, 0.0, 0.0));
+}
+
+vector<Triangle*> PlyFileParser::ParseFile(string fileName, double scale, Vector3D translation)
+{
+    VertexCache.clear();
+    ModelCache.clear();
     QString qfileName = QString::fromStdString(fileName);
     QFile qFile (qfileName);
     qFile.open(QIODevice::ReadOnly);
@@ -34,7 +41,7 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
     
     bool finishedParsingHeader = false;
     
-    QTextStream qCout (stdout);
+    //QTextStream qCout (stdout);
     
     while (!qFile.atEnd())
     {
@@ -67,7 +74,7 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
         }
         else
         {
-            ParseDataLine(line, elementTypes.front());
+            ParseDataLine(line, elementTypes.front(), scale, translation);
 
             elementTypes.front().elementCount--;
             
@@ -82,22 +89,22 @@ ModelObject** PlyFileParser::ParseFile(string fileName, int* outModelLength)
             finishedParsingHeader = true;
         }
         
-        qCout << line;
-        qCout.flush();
+        //qCout << line;
+        //qCout.flush();
     }
     
     qFile.close();
     
-    return ConvertToArray(ModelCache, outModelLength);
+    return ConvertToVector(ModelCache);
 }
 
-void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo)
+void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo, double scale, Vector3D translation)
 {
     QString qElementName = QString::fromStdString(elementInfo.elementName);
     
     if (QString::compare(qElementName, "vertex", Qt::CaseInsensitive) == 0)
     {
-        Vector3D vertex = ParseVertex(line);
+        Vector3D vertex = ParseVertex(line, scale, translation);
         VertexCache.append(vertex);
     }
     else if (QString::compare(qElementName, "triangle", Qt::CaseInsensitive) == 0 || QString::compare(qElementName, "face", Qt::CaseInsensitive) == 0)
@@ -112,11 +119,11 @@ void PlyFileParser::ParseDataLine(QString line, ElementInfo elementInfo)
     }
 }
 
-Vector3D PlyFileParser::ParseVertex(QString line)
+Vector3D PlyFileParser::ParseVertex(QString line, double scale, Vector3D translation)
 {
     QStringList dataValues = line.split(" ");
     
-    if (dataValues.length() != 3)
+    if (dataValues.length() < 3)
     {
         throw "Incorrect number of fields specified for vertex data";
     }
@@ -125,14 +132,15 @@ Vector3D PlyFileParser::ParseVertex(QString line)
     double y = dataValues.at(1).toDouble();
     double z = dataValues.at(2).toDouble();
     
-    return Vector3D(x, y, z);
+    return Vector3D(x, y, z).Scale(scale).Add(translation);
 }
 
 Triangle* PlyFileParser::ParseTriangle(QString line)
 {
     QStringList dataValues = line.split(" ");
+    string lineString = line.toStdString();
     
-    if (dataValues.length() != 8)
+    if (dataValues.length() < 8)
     {
         throw "Incorrect number of fields specified for vertex data";
     }
@@ -180,16 +188,18 @@ Sphere* PlyFileParser::ParseSphere(QString line)
     return output;
 }
 
-ModelObject** PlyFileParser::ConvertToArray(QList<ModelObject*> modelCache, int* outModelLength)
+vector<Triangle*> PlyFileParser::ConvertToVector(QList<ModelObject*> modelCache)
 {
-    *outModelLength = modelCache.count();
+    int modelLength = modelCache.count();
     
-    ModelObject** modelArray = new ModelObject*[*outModelLength];
+    // Only support triangles at this point, spheres may be added in later
+    vector<Triangle*> modelVector;
     
-    for (int i = 0; i < *outModelLength; i++)
+    for (int i = 0; i < modelLength; i++)
     {
-        modelArray[i] = modelCache.at(i);
+        Triangle* triangleModel = dynamic_cast<Triangle*>(modelCache.at(i));
+        modelVector.push_back(triangleModel);
     }
     
-    return modelArray;
+    return modelVector;
 }

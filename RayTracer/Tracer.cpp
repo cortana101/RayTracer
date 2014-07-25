@@ -10,11 +10,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #define REFLECTIVELOSS 0.6
-#define CONSOLEPROGRESSLENGTH 60
 #define LAMBERTIANCONSTANT 8.0
 #define PHONGCONSTANT 100
 #define NUMCONCURRENTTHREADS 4
-#define UPDATEPROGRESSDELAYMS 100
 
 Tracer::Tracer()
 {
@@ -30,16 +28,7 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
 {
     OutputRasterizer output (xSpan, ySpan);
    
-    cout << "|";
-    
-    // Start at 2 to account for the start and end pipe chars
-    for(int i = 2; i < CONSOLEPROGRESSLENGTH; i++)
-    {
-        cout << ".";
-    }
-    
-    cout << "|\n";
-    cout.flush();
+    ConsoleUtils::StartProgressBar();
     
     // Used as a bag of flags to tell which threads have finished
     bool isThreadRunning[NUMCONCURRENTTHREADS];
@@ -62,13 +51,13 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
     void* status;
     
     ProgressParams progressParam;
-    progressParam.pixelProgress = &pixelProgress;
-    progressParam.totalPixelCount = totalPixelCount;
+    progressParam.currentPosition = &pixelProgress;
+    progressParam.total = totalPixelCount;
     
     for(int i = 0; i < NUMCONCURRENTTHREADS; i++)
     {
         TraceRayParams parameters;
-        parameters.modelContainer = modelContainer;
+        parameters.modelContainer = &modelContainer;
         parameters.lightSources = lightSources;
         parameters.lightSourceLength = lightSourceLength;
         parameters.reflectionDepth = 4;
@@ -87,7 +76,7 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
     }
     
     void *(*PrintProgressFunction)(void*);
-    PrintProgressFunction = &Tracer::PrintProgress;
+    PrintProgressFunction = &ConsoleUtils::PrintProgress;
     
     pthread_create(&threads[NUMCONCURRENTTHREADS], NULL, PrintProgressFunction, (void*)&progressParam);
     
@@ -101,40 +90,16 @@ OutputRasterizer Tracer::Render(ModelContainer modelContainer, LightSource* ligh
     return output;
 }
 
-void* Tracer::PrintProgress(void *printProgressParams)
-{
-    ProgressParams* printProgressParameters = (ProgressParams*)printProgressParams;
-    
-    int stepSize = printProgressParameters->totalPixelCount / CONSOLEPROGRESSLENGTH;
-    int lastStepPosition = 0;
-    
-    while(*printProgressParameters->pixelProgress < printProgressParameters->totalPixelCount)
-    {
-        int progressSteps = (*printProgressParameters->pixelProgress - lastStepPosition * stepSize) / stepSize;
-        
-        for (int i = 0; i < progressSteps; i++)
-        {
-            cout << "=";
-            cout.flush();
-        }
-        
-        lastStepPosition += progressSteps;
-        usleep(UPDATEPROGRESSDELAYMS * 1000);
-    }
-    
-    pthread_exit(NULL);
-}
-
 void* Tracer::TraceRayThread(void* traceRayParams)
 {
     TraceRayParams* traceRayParameters = (TraceRayParams*)traceRayParams;
     int currentPixel = 0;
     
-    while(*traceRayParameters->progress.pixelProgress < traceRayParameters->progress.totalPixelCount)
+    while(*traceRayParameters->progress.currentPosition < traceRayParameters->progress.total)
     {
         pthread_mutex_lock(&traceRayParameters->pixelProgressMutex);
-        currentPixel = *traceRayParameters->progress.pixelProgress;
-        *traceRayParameters->progress.pixelProgress += 1;
+        currentPixel = *traceRayParameters->progress.currentPosition;
+        *traceRayParameters->progress.currentPosition += 1;
         pthread_mutex_unlock(&traceRayParameters->pixelProgressMutex);
         
         int currentXPos = currentPixel / traceRayParameters->ySpan;
@@ -147,7 +112,7 @@ void* Tracer::TraceRayThread(void* traceRayParams)
             Vector3D ray = projectionUtils::GetProjection(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
             Vector3D origin = Vector3D(0.0, 0.0, 0.0);
         
-            outputColour = TraceRay(traceRayParameters->modelContainer,
+            outputColour = TraceRay(*traceRayParameters->modelContainer,
                                            traceRayParameters->lightSources,
                                            traceRayParameters->lightSourceLength,
                                            ray,
@@ -159,35 +124,35 @@ void* Tracer::TraceRayThread(void* traceRayParams)
             projectionUtils::AARayBundle rays = projectionUtils::GetProjectionWithAA(traceRayParameters->viewAngleX, traceRayParameters->xSpan, traceRayParameters->ySpan, currentXPos, currentYPos);
             Vector3D origin = Vector3D(0.0, 0.0, 0.0);
             
-            outputColour = TraceRay(traceRayParameters->modelContainer,
+            outputColour = TraceRay(*traceRayParameters->modelContainer,
                                            traceRayParameters->lightSources,
                                            traceRayParameters->lightSourceLength,
                                            rays.v1,
                                            origin,
                                            traceRayParameters->reflectionDepth);
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v2,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v3,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v4,
                                             origin,
                                             traceRayParameters->reflectionDepth));
             
-            outputColour = outputColour.Add(TraceRay(traceRayParameters->modelContainer,
+            outputColour = outputColour.Add(TraceRay(*traceRayParameters->modelContainer,
                                             traceRayParameters->lightSources,
                                             traceRayParameters->lightSourceLength,
                                             rays.v5,

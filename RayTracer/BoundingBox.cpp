@@ -17,7 +17,7 @@ BoundingBox::BoundingBox(Vector3D min, Vector3D max)
         max.y < min.y ||
         max.z < min.z)
     {
-        throw "Please ensure bounding box vectors are added in the correct order";
+        throw NonExistentBoundingBoxException();
     }
 }
 
@@ -26,7 +26,7 @@ BoundingBox::~BoundingBox()
     // Do nothing we have no pointers
 }
 
-BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, float partitionValue, PartitionKeepDirection keepDirection)
+BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection)
 {
     Vector3D localMin = this->min;
     Vector3D localMax = this->max;
@@ -59,6 +59,23 @@ BoundingBox BoundingBox::Constrain(PartitionPlaneType planeType, float partition
     return BoundingBox (localMin, localMax);
 }
 
+bool BoundingBox::TryConstrain(PartitionPlaneType planeType, double partitionValue, PartitionKeepDirection keepDirection, BoundingBox *outBoundingBox)
+{
+    try
+    {
+        *outBoundingBox = this->Constrain(planeType, partitionValue, keepDirection);
+        return true;
+    }
+    catch (NonExistentBoundingBoxException& e)
+    {
+        // In the tryConstrain case, we dont want to fail, we assume the calling method knows how to handle non existent bounding boxes, so
+        // just return null
+        
+        outBoundingBox = NULL;
+        return false;
+    }
+}
+
 BoundingBox BoundingBox::ExpandToContain(BoundingBox targetBoundingBox)
 {
     Vector3D newMax = this->max;
@@ -72,62 +89,6 @@ BoundingBox BoundingBox::ExpandToContain(BoundingBox targetBoundingBox)
     newMin.z = std::min(this->min.z, targetBoundingBox.min.z);
     
     return BoundingBox(newMin, newMax);
-}
-
-bool BoundingBox::Intersects(Triangle triangle)
-{
-    BoundingBox triangleBound = BoundingBox::GetMinimumBoundingBox(triangle);
-    
-    if (this->IsDisjoint(triangleBound))
-    {
-        return false;
-    }
-    
-    if (this->Contains(triangle.p1) ||
-        this->Contains(triangle.p2) ||
-        this->Contains(triangle.p3))
-    {
-        return true;
-    }
-    else
-    {
-        // Top 4 vertices of this bounding box
-        Vector3D vt1 = this->max;
-        Vector3D vt2 = Vector3D(this->max.x, this->max.y, this->min.z);
-        Vector3D vt3 = Vector3D(this->min.x, this->max.y, this->min.z);
-        Vector3D vt4 = Vector3D(this->min.x, this->max.y, this->max.z);
-        
-        // The bottom 4 vertices
-        Vector3D vb1 = Vector3D(this->max.x, this->min.y, this->max.z);
-        Vector3D vb2 = Vector3D(this->max.x, this->min.y, this->min.z);
-        Vector3D vb3 = this->min;
-        Vector3D vb4 = Vector3D(this->min.x, this->min.y, this->max.z);
-       
-        // A list of triangles that describe the 6 sides of this bounding box
-        Triangle outputTriangles[12];
-        outputTriangles[0] = Triangle(vt1, vt2, vt3);
-        outputTriangles[1] = Triangle(vt1, vt3, vt4);
-        outputTriangles[2] = Triangle(vt1, vb1, vb2);
-        outputTriangles[3] = Triangle(vt1, vb2, vt2);
-        outputTriangles[4] = Triangle(vt1, vb1, vb4);
-        outputTriangles[5] = Triangle(vt1, vb4, vt4);
-        outputTriangles[6] = Triangle(vb3, vt3, vt2);
-        outputTriangles[7] = Triangle(vb3, vt2, vb2);
-        outputTriangles[8] = Triangle(vb3, vb4, vt4);
-        outputTriangles[9] = Triangle(vb3, vt4, vt3);
-        outputTriangles[10] = Triangle(vb3, vb4, vb1);
-        outputTriangles[11] = Triangle(vb3, vb1, vb2);
-        
-        for (int i = 0; i < 12; i++)
-        {
-            if (outputTriangles[i].IntersectsWith(triangle))
-            {
-                return true;
-            }
-        }
-    }
-
-    return false;
 }
 
 bool BoundingBox::IsDisjoint(BoundingBox otherBox)

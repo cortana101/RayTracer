@@ -64,10 +64,9 @@ bool Triangle::ProcessRay(Vector3D ray, Vector3D rayOrigin, IntersectProperties 
         outIntersectProperties->normalizedNormal = outIntersectProperties->normalizedNormal.Scale(-1.0);
     }
     
-    // if Normal . RayDirection = 0, it is parallel so will never hit
-    
     double D = outIntersectProperties->normalizedNormal.DotProduct(ray);
     
+    // if Normal . RayDirection = 0, it is parallel so will never hit
     if (D == 0.0)
     {
         return false;
@@ -117,7 +116,7 @@ Vector3D Triangle::GetNominalPosition()
     // For now just let the nominal position be one of the existing vertices
     return this->p1;
 }
-
+/*
 bool Triangle::IntersectsWith(Triangle otherTriangle)
 {
     // To determine if 2 triangles intersect each other, we just need to treat each edge of each triangle
@@ -129,7 +128,7 @@ bool Triangle::IntersectsWith(Triangle otherTriangle)
             this->IntersectsWithEdge(otherTriangle.p1, otherTriangle.p2) ||
             this->IntersectsWithEdge(otherTriangle.p2, otherTriangle.p3) ||
             this->IntersectsWithEdge(otherTriangle.p3, otherTriangle.p1);
-}
+}*/
 
 bool Triangle::IntersectsWithEdge(Vector3D v1, Vector3D v2)
 {
